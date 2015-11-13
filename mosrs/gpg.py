@@ -17,31 +17,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import print_function
+
 from subprocess import Popen, PIPE
+from urllib import quote as _e
+from binascii import hexlify
 
-def _e(string):
-    """
-    Percent-escape a string
-    """
-    return urllib.quote(string)
-
-class GPGAgentConnection:
-    def __init__(self):
-        self.agent = Popen(['gpg-connect-agent'],
-                stdout = PIPE,
-                stderr = PIPE,
-                stdin  = PIPE,
-                )
-
+class GPGAgent:
     def get_passphrase(self, cache_id):
         """
         Get a passphrase from the cache
 
         https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
         """
-        self.agent.stdin.write("GET_PASSPHRASE --data %s"%_e(cache_id))
-        self._check_return()
-        return self.stdout.readline()
+        stdout = self.send("GET_PASSPHRASE --data %s X X X\n"%_e(cache_id))
+        return stdout[0][2:]
 
     def clear_passphrase(self, cache_id):
         """
@@ -49,8 +39,7 @@ class GPGAgentConnection:
 
         https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
         """
-        self.agent.stdin.write("CLEAR_PASSPHRASE %s"%_e(cache_id))
-        self._check_return()
+        self.send("CLEAR_PASSPHRASE %s\n"%_e(cache_id))
 
     def preset_passphrase(self, keygrip, passphrase=None):
         """
@@ -61,23 +50,22 @@ class GPGAgentConnection:
         # Only -1 is allowed for timeout
         timeout = -1
         if passphrase is not None:
-            self.agent.stdin.write("PRESET_PASSPHRASE %s %s %s"%(_e(keygrip), _e(timeout), _e(passphrase)))
+            self.send("PRESET_PASSPHRASE %s %s %s\n"%(_e(keygrip), timeout, hexlify(passphrase)))
         else:
-            self.agent.stdin.write("PRESET_PASSPHRASE %s %s"%(_e(keygrip), _e(timeout)))
+            self.send("PRESET_PASSPHRASE %s %s\n"%(_e(keygrip), timeout))
 
-        self._check_return()
+    def send(self, string):
+        agent = Popen(['gpg-connect-agent'],
+                bufsize = 0,
+                stdout = PIPE,
+                stdin  = PIPE,
+                )
+        stdout, stderr = agent.communicate(string)
+        _check_return(string,stdout)
+        return stdout.split('\n')[0:-2]
 
-    def _check_return(self):
-        line = self.stdout.readline()
-        if line != "OK":
-            raise Exception(line)
-
-    def close(self):
-        # Wait for the connection to finish
-        self.agent.communicate()
-
-    def __enter__(self):
-        return self
-    def __exit__(self, type, value, traceback):
-        self.close()
+def _check_return(string,stdout):
+    line = stdout.split('\n')[-2]
+    if line != "OK":
+        raise Exception(string,line)
 

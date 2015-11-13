@@ -17,9 +17,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from mosrs.gpg import GPGAgentConnection
+from mosrs.gpg import GPGAgent
+import pytest
 
-def test_connection():
-    with GPGAgentConnection() as gpg:
-        pass
+def test_store():
+    gpg = GPGAgent()
+    gpg.preset_passphrase('test:one','insecure')
+    passwd = gpg.get_passphrase('test:one')
+    assert passwd == 'insecure'
+
+def test_clear():
+    gpg = GPGAgent()
+    gpg.preset_passphrase('test:one','insecure')
+    gpg.clear_passphrase('test:one')
+    with pytest.raises(Exception):
+        passwd = gpg.get_passphrase('test:one')
 
