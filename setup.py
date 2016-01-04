@@ -25,7 +25,7 @@ setup(
         packages = find_packages(),
         entry_points = {
             'console_scripts': [
-                'mosrs = mosrs.mosrs:update',
+                'mosrs = mosrs.mosrs:main',
                 ]
             }
         )
