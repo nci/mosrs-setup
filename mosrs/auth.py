@@ -31,6 +31,9 @@ from . import gpg
 svn_servers = os.path.join(os.environ['HOME'],'.subversion/servers')
 
 def get_rose_username():
+    """
+    Get the Rose username from Subversion's config file
+    """
     try:
         config = SafeConfigParser()
         config.read(svn_servers)
@@ -39,6 +42,9 @@ def get_rose_username():
         return None
 
 def save_rose_username(username):
+    """
+    Add the Rose username & server settings to Subversion's config file
+    """
     config = SafeConfigParser()
     config.read(svn_servers)
 
@@ -55,22 +61,39 @@ def save_rose_username(username):
         config.write(f)
 
 def get_rose_password():
+    """
+    Ask GPG agent for the Rose password
+    """
     return gpg.get_passphrase('rosie:https:code.metoffice.gov.uk')
 
 def save_rose_password(passwd):
+    """
+    Store the Rose password in GPG agent
+    """
     gpg.preset_passphrase('rosie:https:code.metoffice.gov.uk',passwd)
 
 def save_svn_password(passwd):
+    """
+    Store the Subversion password in GPG agent
+    """
     key = md5('<https://code.metoffice.gov.uk:443> Met Office Code').hexdigest()
     gpg.preset_passphrase(key,passwd)
 
 def request_credentials(user=None):
+    """
+    Request credentials from the user. If user=None then ask for the username
+    as well as the password.
+    """
     if user is None:
         user = raw_input('Please enter your MOSRS username: ')
     passwd = getpass('Please enter your MOSRS password: ')
     return user, passwd
 
 def check_credentials(user, passwd):
+    """
+    Try connecting to the Rose server with the provided credentials, raises an
+    exception if this fails
+    """
     r = requests.get('https://code.metoffice.gov.uk/rosie', auth=(user, passwd))
     try:
         r.raise_for_status()
@@ -79,11 +102,10 @@ def check_credentials(user, passwd):
         raise
     print("\nSuccessfully authenticated with MOSRS")
 
-def update(force=False):
-    if force:
-        user = None
-    else:
-        user = get_rose_username()
+def update(user=None):
+    """
+    Ask for credentials from the user & save in the GPG agent
+    """
 
     # Ask for credentials
     user, passwd = request_credentials(user)
@@ -99,11 +121,6 @@ def update(force=False):
     save_rose_password(passwd)
     save_svn_password(passwd)
 
-def check_cache():
-    user   = get_rose_username()
-    passwd = get_rose_password()
-    check_credentials(user, passwd)
-
 def main():
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
     parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
@@ -111,12 +128,15 @@ def main():
 
     try:
         if args.force:
-            update(force=True)
+            update(user=None)
         else:
+            user = get_rose_username()
             try:
-                check_cache()
+                passwd = get_rose_password()
+                check_credentials(user, passwd)
             except Exception:
-                update()
+                update(user)
+
     except requests.exceptions.HTTPError:
         print("\nERROR: Please check your credentials, if you have recently reset your password it may take a bit of time for the server to recognise the new password")
 

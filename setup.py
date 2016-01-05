@@ -25,7 +25,8 @@ setup(
         packages = find_packages(),
         entry_points = {
             'console_scripts': [
-                'mosrs = mosrs.mosrs:main',
+                'mosrs-auth  = mosrs.auth:main',
+                'mosrs-setup = mosrs.setup:main',
                 ]
             }
         )
