@@ -86,7 +86,7 @@ def request_credentials(user=None):
     """
     if user is None:
         user = raw_input('Please enter your MOSRS username: ')
-    passwd = getpass('Please enter your MOSRS password: ')
+    passwd = getpass('Please enter the MOSRS password for %s: '%user)
     return user, passwd
 
 def check_credentials(user, passwd):
@@ -121,6 +121,14 @@ def update(user=None):
     save_rose_password(passwd)
     save_svn_password(passwd)
 
+def check_or_update():
+    user = get_rose_username()
+    try:
+        passwd = get_rose_password()
+        check_credentials(user, passwd)
+    except Exception:
+        update(user)
+
 def main():
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
     parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
@@ -130,12 +138,7 @@ def main():
         if args.force:
             update(user=None)
         else:
-            user = get_rose_username()
-            try:
-                passwd = get_rose_password()
-                check_credentials(user, passwd)
-            except Exception:
-                update(user)
+            check_or_update()
 
     except requests.exceptions.HTTPError:
         print("\nERROR: Please check your credentials, if you have recently reset your password it may take a bit of time for the server to recognise the new password")
