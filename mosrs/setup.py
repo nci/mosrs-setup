@@ -107,7 +107,7 @@ def check_gpg_agent():
     """
     try:
         gpg.send('GETINFO version')
-        print('GPG Agent is running')
+        print('\nGPG Agent is running')
     except Exception:
         gpg_startup()
         raise SetupError

@@ -23,6 +23,7 @@ import argparse
 from getpass import getpass
 from ConfigParser import SafeConfigParser
 from hashlib import md5
+from subprocess import Popen,PIPE
 
 import requests
 
@@ -104,7 +105,7 @@ def check_credentials(user, passwd):
     except requests.exceptions.HTTPError:
         print("\nERROR: Unable to connect to MOSRS with your credentials")
         raise
-    print("\nSuccessfully authenticated with MOSRS")
+    print("\nSuccessfully authenticated with MOSRS as %s"%user)
 
 def update(user=None):
     """
