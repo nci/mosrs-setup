@@ -116,16 +116,25 @@ def setup_mosrs_account():
     """
     Setup Mosrs
     """
-    registered = prompt_bool('Do you have an existing account on https://code.metoffice.gov.uk? '+
-            'This will ordinarily be your name in lowercase, e.g. "janebloggs"')
+    registered = prompt_bool(dedent("""
+            Do you have an existing account on https://code.metoffice.gov.uk?
+            This will ordinarily be your name in lowercase, e.g. "janebloggs"
+            You can go to the website if you need to reset your password
+            """))
+
     if not registered:
         name, email = userinfo()
         name  = prompt_or_default('What is your name?',name)
         email = prompt_or_default('What is your work email address?',email)
         request = Popen(['mail', '-s','MOSRS account request for %s'%name, 'access_help@nf.nci.org.au'], stdin=PIPE)
-        request.communicate('Test Message:\n%s (NCI id %s, email <%s>) would like to request an account on MOSRS. '%(name, environ['USER'], email)+
-                'Can the sponsor for their institution please submit a request on their behalf at '+
-                'https://code.metoffice.gov.uk/trac/admin/newticket?type=account-request')
+        request.communicate(dedent("""
+                ACCESS user %s (NCI id %s, email <%s>) would like to request an account on MOSRS.
+                Can the sponsor for their institution please submit a request on their behalf at
+                    https://code.metoffice.gov.uk/trac/admin/newticket?type=account-request
+
+                You can check if they have an existing account at
+                    https://code.metoffice.gov.uk/trac/home/wiki/UserList
+                """%(name, environ['USER'], email)))
         print('\n')
         print('Submitting MOSRS account request for %s <%s> to access_help'%(name,email))
         print('Once your account has been activated (will take at least one UK business day) '+

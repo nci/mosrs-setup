@@ -45,6 +45,10 @@ def save_rose_username(username):
     """
     Add the Rose username & server settings to Subversion's config file
     """
+    # Run 'svn help' to create the config files if they don't exist
+    svn = Popen(['svn','help'],stdout=PIPE)
+    svn.communicate()
+
     config = SafeConfigParser()
     config.read(svn_servers)
 
