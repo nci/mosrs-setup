@@ -172,6 +172,8 @@ def main():
         # Account successfully created
         print('You are now able to use Rose and the UM. To see a list of available experiments run:')
         print('    rosie go\n')
+        print('Your password will be cached for a maximum of 12 hours. To store your password again run:')
+        print('    mosrs-auth\n')
     except SetupError:
         print('Once this is done please run this setup script again\n')
     finally:

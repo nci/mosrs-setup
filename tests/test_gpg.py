@@ -17,19 +17,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from mosrs.gpg import GPGAgent
+from mosrs.gpg import *
 import pytest
 
 def test_store():
-    gpg = GPGAgent()
-    gpg.preset_passphrase('test:one','insecure')
-    passwd = gpg.get_passphrase('test:one')
+    preset_passphrase('test:one','insecure')
+    passwd = get_passphrase('test:one')
     assert passwd == 'insecure'
 
+def test_special_chars():
+    input = 'Aa!@$% c'
+    preset_passphrase('test:one',input)
+    passwd = get_passphrase('test:one')
+    assert passwd == input
+
 def test_clear():
-    gpg = GPGAgent()
-    gpg.preset_passphrase('test:one','insecure')
-    gpg.clear_passphrase('test:one')
+    preset_passphrase('test:one','insecure')
+    clear_passphrase('test:one')
     with pytest.raises(Exception):
-        passwd = gpg.get_passphrase('test:one')
+        passwd = get_passphrase('test:one')
 
