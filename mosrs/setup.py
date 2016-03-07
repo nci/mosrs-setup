@@ -76,7 +76,6 @@ def gpg_startup():
         else
             eval $( gpg-agent --daemon --allow-preset-passphrase --batch --max-cache-ttl 43200 --write-env-file ~/.gpg-agent-info )
         fi
-        mosrs-auth
         """)
     home = environ['HOME']
     for f in ['.profile','.bash_profile']:
