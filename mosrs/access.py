@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright 2015 ARC Centre of Excellence for Climate Systems Science
+Copyright 2016 ARC Centre of Excellence for Climate Systems Science
 
 author: Scott Wales <scott.wales@unimelb.edu.au>
 
@@ -17,17 +17,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from setuptools import setup, find_packages
+from . import gpg
+from getpass import getpass
+from hashlib import md5
 
-setup(
-        name     = 'mosrs',
-        version  = '0.1.2',
-        packages = find_packages(),
-        entry_points = {
-            'console_scripts': [
-                'mosrs-auth  = mosrs.auth:main',
-                'mosrs-setup = mosrs.setup:main',
-                'access-auth = mosrs.access:main',
-                ]
-            }
-        )
+def main():
+    realm = '<https://access-svn.nci.org.au:443> AccessCollab'
+    key = md5(realm).hexdigest()
+    passwd = getpass('Please enter your NCI password: ')
+    gpg.preset_passphrase(key, passwd)
+
+if __name__ == '__main__':
+    main()

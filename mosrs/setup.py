@@ -27,6 +27,25 @@ import getpass
 
 from . import auth, gpg
 
+def colour(text, colour):
+    if colour == 'red':
+        code = '\033[31;1m'
+    elif colour == 'green':
+        code = '\033[32m'
+    elif colour == 'blue':
+        code = '\033[93m'
+    else:
+        raise Exception
+    reset = '\033[m'
+    return code + text + reset
+
+def info(text):
+    print("%s: %s"%(colour('INFO','blue'),text))
+def warning(text):
+    print("%s: %s"%(colour('WARN','red'),text))
+def todo(text):
+    print("%s: %s"%(colour('TODO','green'),text))
+
 class SetupError(Exception):
     """
     Indicates user needs to take action before setup can complete
@@ -85,15 +104,15 @@ def gpg_startup():
             grep = Popen(['grep','gpg-agent',p],stdout=PIPE)
             grep.communicate()
             if grep.returncode == 0:
-                print('\nGPG Agent is referenced in ~/%s but is not currently running. '%f+
-                        'Try relogging, if that doesn\'t work please contact the helpdesk\n')
+                warning('GPG Agent is referenced in ~/%s but is not currently running. '%f+
+                        'Try relogging to start it again, if that doesn\'t work please contact the helpdesk')
                 continue
 
             # Add script to file
             with open(p,'a') as profile:
                 profile.write(agent)
 
-    print('\nGPG Agent has been added to your startup scripts. '+
+    todo('GPG Agent has been added to your startup scripts. '+
             'Please log out of Accessdev then back in again to make sure it has been activated\n')
 
 
@@ -106,7 +125,7 @@ def check_gpg_agent():
     """
     try:
         gpg.send('GETINFO version')
-        print('\nGPG Agent is running')
+        info('GPG Agent is running')
     except Exception:
         gpg_startup()
         raise SetupError
@@ -118,8 +137,8 @@ def setup_mosrs_account():
     registered = prompt_bool(dedent("""
             Do you have an existing account on https://code.metoffice.gov.uk?
             This will ordinarily be your name in lowercase, e.g. "janebloggs"
-            You can go to the website if you need to reset your password
-            """))
+            You can go to the website if you need to reset your password"""))
+    print()
 
     if not registered:
         name, email = userinfo()
@@ -135,8 +154,8 @@ def setup_mosrs_account():
                     https://code.metoffice.gov.uk/trac/home/wiki/UserList
                 """%(name, environ['USER'], email)))
         print('\n')
-        print('Submitting MOSRS account request for %s <%s> to access_help'%(name,email))
-        print('Once your account has been activated (will take at least one UK business day) '+
+        info('Submitting MOSRS account request for %s <%s> to access_help'%(name,email))
+        info('Once your account has been activated (will take at least one UK business day) '+
                 'you will receive an email detailing how to set up your password\n')
         raise SetupError
     check_gpg_agent()
@@ -154,8 +173,8 @@ def check_raijin_ssh():
     if result == 0:
         print('Successfully found Rose\n')
     else:
-        print('Unable to connect to Raijin')
-        print('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
+        warning('Unable to connect to Raijin')
+        warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
 
 def main():
@@ -174,7 +193,7 @@ def main():
         print('Your password will be cached for a maximum of 12 hours. To store your password again run:')
         print('    mosrs-auth\n')
     except SetupError:
-        print('Once this is done please run this setup script again\n')
+        todo('Once this has been done please run this setup script again\n')
     finally:
         print('You can ask for help with the ACCESS systems by emailing "access_help@nf.nci.org.au"\n')
     
