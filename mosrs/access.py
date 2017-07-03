@@ -20,12 +20,24 @@ limitations under the License.
 from . import gpg
 from getpass import getpass
 from hashlib import md5
+import requests
+import os
 
 def main():
     realm = '<https://access-svn.nci.org.au:443> AccessCollab'
     key = md5(realm).hexdigest()
-    passwd = getpass('Please enter your NCI password: ')
+    passwd = getpass('Please enter your password for user %s: '%os.environ['USER'])
+
+    # Test the password
+    r = requests.get('https://access-svn.nci.org.au/svn/um',
+            auth=(os.environ['USER'], passwd), verify=False)
+    if r.status_code == 401:
+        print('ERROR: Bad password for user %s'%os.environ['USER'])
+        return
+    r.raise_for_status()
+
     gpg.preset_passphrase(key, passwd)
+    print('SUCCESS: Password saved in gpg-agent for user %s'%os.environ['USER'])
 
 if __name__ == '__main__':
     main()
