@@ -30,4 +30,4 @@ setup(
                 'access-auth = mosrs.access:main',
                 ]
             }
-        g
+        )
