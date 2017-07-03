@@ -39,5 +39,9 @@ def main():
     gpg.preset_passphrase(key, passwd)
     print('SUCCESS: Password saved in gpg-agent for user %s'%os.environ['USER'])
 
+    nemo_realm = '<https://access-svn.nci.org.au:443> nemo'
+    nemo_key = md5(nemo_realm).hexdigest()
+    gpg.preset_passphrase(nemo_key, passwd)
+
 if __name__ == '__main__':
     main()
