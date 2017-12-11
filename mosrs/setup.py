@@ -172,6 +172,18 @@ def check_raijin_ssh():
         warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
 
+def accessdev_setup():
+    """
+    Setup GPG for accessdev access
+    """
+    try:
+        check_gpg_agent()
+        print('\n')
+        print('To store your password for 12 hours run:')
+        print('    access-auth\n')
+    except SetupError:
+        todo('Once this has been done please run this setup script again\n')
+
 def main():
     print('\n')
     print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
