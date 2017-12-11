@@ -172,9 +172,9 @@ def check_raijin_ssh():
         warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
 
-def accessdev_setup():
+def accesssvn_setup():
     """
-    Setup GPG for accessdev access
+    Setup GPG for access-svn access
     """
     try:
         check_gpg_agent()
