@@ -21,6 +21,7 @@ from __future__ import print_function
 
 from subprocess import Popen, PIPE
 from binascii import hexlify
+from urllib import unquote
 
 def get_passphrase(cache_id):
     """
@@ -29,7 +30,7 @@ def get_passphrase(cache_id):
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
     stdout = send("GET_PASSPHRASE --data %s X X X\n"%cache_id)
-    return stdout[0][2:]
+    return unquote(stdout[0][2:])
 
 def clear_passphrase(cache_id):
     """

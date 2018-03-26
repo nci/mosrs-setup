@@ -19,21 +19,26 @@ limitations under the License.
 
 from mosrs.gpg import *
 import pytest
+import string
 
 def test_store():
     preset_passphrase('test:one','insecure')
     passwd = get_passphrase('test:one')
     assert passwd == 'insecure'
 
-def test_special_chars():
-    input = 'Aa!@$% c'
-    preset_passphrase('test:one',input)
-    passwd = get_passphrase('test:one')
-    assert passwd == input
-
 def test_clear():
     preset_passphrase('test:one','insecure')
     clear_passphrase('test:one')
     with pytest.raises(Exception):
         passwd = get_passphrase('test:one')
+
+def check_password(input):
+    preset_passphrase('test:one',input)
+    passwd = get_passphrase('test:one')
+    assert passwd == input
+
+def test_passwords():
+    check_password("1234567890"*10)
+    check_password(string.printable)
+    check_password("Aa!@$% c")
 
