@@ -24,8 +24,6 @@ import requests
 import os
 
 def main():
-    realm = '<https://access-svn.nci.org.au:443> AccessCollab'
-    key = md5(realm).hexdigest()
     passwd = getpass('Please enter your password for user %s: '%os.environ['USER'])
 
     # Test the password
@@ -36,12 +34,19 @@ def main():
         return
     r.raise_for_status()
 
+    realm = '<https://access-svn.nci.org.au:443> AccessCollab'
+    key = md5(realm).hexdigest()
     gpg.preset_passphrase(key, passwd)
-    print('SUCCESS: Password saved in gpg-agent for user %s'%os.environ['USER'])
 
     nemo_realm = '<https://access-svn.nci.org.au:443> nemo'
     nemo_key = md5(nemo_realm).hexdigest()
     gpg.preset_passphrase(nemo_key, passwd)
+
+    realm = '<https://trac.nci.org.au:443> NCI Projects'
+    key = md5(realm).hexdigest()
+    gpg.preset_passphrase(key, passwd)
+
+    print('SUCCESS: Password saved in gpg-agent for user %s'%os.environ['USER'])
 
 if __name__ == '__main__':
     main()
