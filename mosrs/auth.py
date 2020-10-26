@@ -131,7 +131,7 @@ def check_or_update():
     try:
         passwd = get_rose_password()
         check_credentials(user, passwd)
-    except Exception:
+    except requests.exceptions.HTTPError:
         update(user)
 
 def main():

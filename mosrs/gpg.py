@@ -61,6 +61,8 @@ def send(message):
             stdin  = PIPE,
             )
     stdout, stderr = agent.communicate(message)
+    if agent.returncode != 0:
+        raise Exception("ERROR connecting to gpg-agent. Try removing the file '~/.gpg-agent-info' and relogging")
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
 
