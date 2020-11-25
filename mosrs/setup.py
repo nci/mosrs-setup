@@ -155,12 +155,12 @@ def yesno(default=None):
     Continues asking until an answer is given.
     """
     while True:
-        ans = input()
+        ans = raw_input()
         if ans.lower() in ['y', 'yes']:
             return True
         elif ans.lower() in ['n', 'no']:
             return False
-        elif ans="":
+        elif ans == "":
             if default is not None:
                 return default
         print('[yes/no]')
@@ -213,7 +213,7 @@ def main():
     print('\n')
     print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
     print('This script will set up your account to use Rose and the UM\n')
-    
+
     try:
         setup_mosrs_account()
 
@@ -228,6 +228,6 @@ def main():
         todo('Once this has been done please run this setup script again\n')
     finally:
         print('You can ask for help with the ACCESS systems by emailing "access_help@nf.nci.org.au"\n')
-    
+
 if __name__ == '__main__':
     main()
