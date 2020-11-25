@@ -159,6 +159,15 @@ def setup_mosrs_account():
         mosrs_request = mosrs_request.lower()
     if mosrs_request.startswith('y'):
         auth.check_or_update()
+    else:
+        print(dedent(
+            """
+            If you need to access new versions of the UM please send a 
+            request to 'cws_help@nci.org.au' saying that you'd like a MOSRS account
+
+            Once you have an account run this script again
+            """
+        ))
     print('\n')
 
 def check_raijin_ssh():
