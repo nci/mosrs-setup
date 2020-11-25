@@ -148,13 +148,26 @@ def register_mosrs_account():
     info('Once your account has been activated (will take at least one UK business day) '+
             'you will receive an email detailing how to set up your password\n')
 
-
 def setup_mosrs_account():
     """
     Setup Mosrs
     """
     check_gpg_agent()
-    auth.check_or_update()
+    mosrs_request = None
+    while mosrs_request not in ['yes', 'no', 'y', 'n']:
+        mosrs_request = prompt_or_default("Do you have a MOSRS account", "yes")
+        mosrs_request = mosrs_request.lower()
+    if mosrs_request.startswith('y'):
+        auth.check_or_update()
+    else:
+        print(dedent(
+            """
+            If you need to access new versions of the UM please send a 
+            request to 'cws_help@nci.org.au' saying that you'd like a MOSRS account
+
+            Once you have an account run this script again
+            """
+        ))
     print('\n')
 
 def check_raijin_ssh():
@@ -195,7 +208,7 @@ def main():
     print('\n')
     print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
     print('This script will set up your account to use Rose and the UM\n')
-    
+
     try:
         setup_mosrs_account()
 
@@ -210,6 +223,6 @@ def main():
         todo('Once this has been done please run this setup script again\n')
     finally:
         print('You can ask for help with the ACCESS systems by emailing "access_help@nf.nci.org.au"\n')
-    
+
 if __name__ == '__main__':
     main()
