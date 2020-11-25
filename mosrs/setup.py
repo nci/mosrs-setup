@@ -148,13 +148,31 @@ def register_mosrs_account():
     info('Once your account has been activated (will take at least one UK business day) '+
             'you will receive an email detailing how to set up your password\n')
 
+def yesno(default=None):
+    """
+    Returns True if user types yes or y, False if user types no or n,
+    or the value of default (if set) if the user just presses enter.
+    Continues asking until an answer is given.
+    """
+    while True:
+        ans = input()
+        if ans.lower() in ['y', 'yes']:
+            return True
+        elif ans.lower() in ['n', 'no']:
+            return False
+        elif ans="":
+            if default is not None:
+                return default
+        print('[yes/no]')
 
 def setup_mosrs_account():
     """
     Setup Mosrs
     """
     check_gpg_agent()
-    auth.check_or_update()
+    print("Do you have a MOSRS account [Yn]")
+    if yesno(True):
+        auth.check_or_update()
     print('\n')
 
 def check_raijin_ssh():
