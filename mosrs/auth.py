@@ -131,7 +131,11 @@ def check_or_update():
     try:
         passwd = get_rose_password()
         check_credentials(user, passwd)
+    except gpg.GPGError:
+        # Password not in GPG
+        update(user)
     except requests.exceptions.HTTPError:
+        # Testing authentication failed
         update(user)
 
 def main():

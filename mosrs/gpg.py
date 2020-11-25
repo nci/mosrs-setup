@@ -23,6 +23,11 @@ from subprocess import Popen, PIPE
 from binascii import hexlify
 from urllib import unquote
 
+
+class GPGError(Exception):
+    pass
+
+
 def get_passphrase(cache_id):
     """
     Get a passphrase from the cache
@@ -72,5 +77,5 @@ def _check_return(message,stdout):
     """
     result = stdout.split('\n')[-2]
     if result != "OK":
-        raise Exception(message,result)
+        raise GPGError(message,result)
 
