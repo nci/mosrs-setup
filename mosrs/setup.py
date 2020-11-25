@@ -159,16 +159,23 @@ def setup_mosrs_account():
 
 def check_raijin_ssh():
     """
-    Test Rose/Cylc can be found on Raijin
+    Raijin has been decommissioned. There should no longer be any calls to this
+    procedure. In case there is, I'm leaving this stub in.
     """
-    print('Testing Rose can be accessed on Raijin...')
+    raise ValueError("raijin should no longer be used. Please contact CMS")
+
+def check_gadi_ssh():
+    """
+    Test Rose/Cylc can be found on Gadi
+    """
+    print('Testing Rose can be accessed on Gadi...')
     # ssh -oBatchMode=yes /projects/access/bin/cylc --version
-    ssh = Popen(['ssh','-oBatchMode=yes','raijin','/projects/access/bin/cylc --version'])
+    ssh = Popen(['ssh','-oBatchMode=yes','gadi','/projects/access/bin/cylc --version'])
     result = ssh.wait()
     if result == 0:
         print('Successfully found Rose\n')
     else:
-        warning('Unable to connect to Raijin')
+        warning('Unable to connect to Gadi')
         warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
 
@@ -192,7 +199,7 @@ def main():
     try:
         setup_mosrs_account()
 
-        check_raijin_ssh()
+        check_gadi_ssh()
 
         # Account successfully created
         print('You are now able to use Rose and the UM. To see a list of available experiments run:')
