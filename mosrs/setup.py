@@ -148,30 +148,16 @@ def register_mosrs_account():
     info('Once your account has been activated (will take at least one UK business day) '+
             'you will receive an email detailing how to set up your password\n')
 
-def yesno(default=None):
-    """
-    Returns True if user types yes or y, False if user types no or n,
-    or the value of default (if set) if the user just presses enter.
-    Continues asking until an answer is given.
-    """
-    while True:
-        ans = raw_input()
-        if ans.lower() in ['y', 'yes']:
-            return True
-        elif ans.lower() in ['n', 'no']:
-            return False
-        elif ans == "":
-            if default is not None:
-                return default
-        print('[yes/no]')
-
 def setup_mosrs_account():
     """
     Setup Mosrs
     """
     check_gpg_agent()
-    print("Do you have a MOSRS account [Yn]")
-    if yesno(True):
+    mosrs_request = None
+    while mosrs_request not in ['yes', 'no', 'y', 'n']:
+        mosrs_request = prompt_or_default("Do you have a MOSRS account", "yes")
+        mosrs_request = mosrs_request.lower()
+    if mosrs_request.startswith('y'):
         auth.check_or_update()
     print('\n')
 
