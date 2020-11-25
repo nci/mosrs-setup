@@ -151,6 +151,8 @@ def main():
 
     except requests.exceptions.HTTPError:
         print("\nERROR: Please check your credentials, if you have recently reset your password it may take a bit of time for the server to recognise the new password")
+    except Exception as e:
+        print(e)
 
 if __name__ == '__main__':
     main()
