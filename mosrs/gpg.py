@@ -17,8 +17,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import print_function
-
 from subprocess import Popen, PIPE
 from binascii import hexlify
 from urllib import unquote
@@ -27,6 +25,10 @@ from urllib import unquote
 class GPGError(Exception):
     pass
 
+def is_new_gpg():
+    gpg_agent = Popen(['gpg-agent', '--use-standard-socket-p'])
+    gpg_agent.communicate()
+    return gpg_agent.returncode == 0
 
 def get_passphrase(cache_id):
     """
@@ -67,7 +69,10 @@ def send(message):
             )
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
-        raise Exception("ERROR connecting to gpg-agent. Try removing the file '~/.gpg-agent-info' and relogging")
+        message = "ERROR connecting to gpg-agent." 
+        if not is_new_gpg():
+            message.append(" Try removing the file '~/.gpg-agent-info' and relogging") 
+        raise Exception(message)
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
 
@@ -78,4 +83,5 @@ def _check_return(message,stdout):
     result = stdout.split('\n')[-2]
     if result != "OK":
         raise GPGError(message,result)
+
 
