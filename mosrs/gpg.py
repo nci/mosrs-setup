@@ -36,7 +36,7 @@ def get_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    stdout = send("GET_PASSPHRASE --data %s X X X\n"%cache_id)
+    stdout = send("GET_PASSPHRASE --no-ask --data %s X X X\n"%cache_id)
     return unquote(stdout[0][2:])
 
 def clear_passphrase(cache_id):
