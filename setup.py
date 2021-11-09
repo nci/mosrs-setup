@@ -32,6 +32,7 @@ setup(
                 'mosrs-auth  = mosrs.auth:main',
                 'mosrs-setup = mosrs.setup:main',
                 'access-auth = mosrs.access:main',
+                'accessdev-auth = mosrs.accessdev:main',
                 'accesssvn-setup = mosrs.setup:accesssvn_setup',
                 ]
             }

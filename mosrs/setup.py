@@ -24,6 +24,7 @@ from os import environ, path
 from distutils.util import strtobool
 import ldap
 import getpass
+import socket
 
 from . import auth, gpg
 
@@ -89,13 +90,22 @@ def prompt_or_default(prompt, default):
 
 def gpg_startup():
     agent = dedent("""
+    if gpg-agent --use-standard-socket-p; then
+        # New GPG always returns 0.
+        # Ensure that the agent is running.
+        gpg-connect-agent /bye
+        export GPG_TTY=$(tty)
+        export GPG_AGENT_INFO=$HOME/.gnupg/S.gpg-agent:0:1
+    else
+        # Old GPG
         [ -f ~/.gpg-agent-info ] && source ~/.gpg-agent-info
         if [ -S "${GPG_AGENT_INFO%%:*}" ]; then
             export GPG_AGENT_INFO
         else
             eval $( gpg-agent --daemon --allow-preset-passphrase --batch --max-cache-ttl 43200 --write-env-file ~/.gpg-agent-info )
         fi
-        """)
+    fi
+    """)
     home = environ['HOME']
     for f in ['.profile','.bash_profile']:
         p = path.join(home,f)
@@ -112,8 +122,10 @@ def gpg_startup():
             with open(p,'a') as profile:
                 profile.write(agent)
 
+    host = "OOD" if on_ood() else "Accessdev"
     todo('GPG Agent has been added to your startup scripts. '+
-            'Please log out of Accessdev then back in again to make sure it has been activated\n')
+            'Please log out of ' + host +
+            ' then back in again to make sure it has been activated\n')
 
 
 def check_gpg_agent():
@@ -162,7 +174,7 @@ def setup_mosrs_account():
     else:
         print(dedent(
             """
-            If you need to access new versions of the UM please send a 
+            If you need to access new versions of the UM please send a
             request to 'cws_help@nci.org.au' saying that you'd like a MOSRS account
 
             Once you have an account run this script again
@@ -204,15 +216,23 @@ def accesssvn_setup():
     except SetupError:
         todo('Once this has been done please run this setup script again\n')
 
+def on_ood():
+    hostname = socket.gethostname()
+    return hostname.startswith("ood")
+
 def main():
     print('\n')
-    print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
+    if on_ood():
+        print('Welcome to OOD, the NCI Open OnDemand service')
+    else:
+        print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
     print('This script will set up your account to use Rose and the UM\n')
 
     try:
         setup_mosrs_account()
 
-        check_gadi_ssh()
+        if not on_ood():
+            check_gadi_ssh()
 
         # Account successfully created
         print('You are now able to use Rose and the UM. To see a list of available experiments run:')
