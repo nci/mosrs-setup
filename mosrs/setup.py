@@ -91,8 +91,9 @@ def prompt_or_default(prompt, default):
 def gpg_startup():
     agent = dedent("""
     if gpg-agent --use-standard-socket-p; then
-        # New GPG always returns 0. Restart the agent
-        gpg-connect-agent reloadagent /bye
+        # New GPG always returns 0.
+        # Ensure that the agent is running.
+        gpg-connect-agent /bye
         export GPG_TTY=$(tty)
         export GPG_AGENT_INFO=$HOME/.gnupg/S.gpg-agent:0:1
     else
