@@ -65,24 +65,44 @@ def save_rose_username(username):
     with open(svn_servers, 'w') as f:
         config.write(f)
 
+rosie_key = 'rosie:https:code.metoffice.gov.uk'
+rosie_url = 'https://code.metoffice.gov.uk/rosie'
+
 def get_rose_password():
     """
     Ask GPG agent for the Rose password
     """
-    return gpg.get_passphrase('rosie:https:code.metoffice.gov.uk')
+    return gpg.get_passphrase(rosie_key)
 
 def save_rose_password(passwd):
     """
     Store the Rose password in GPG agent
     """
-    gpg.preset_passphrase('rosie:https:code.metoffice.gov.uk',passwd)
+    gpg.preset_passphrase(rosie_key,passwd)
+
+svn_prekey = '<https://code.metoffice.gov.uk:443> Met Office Code'
+svn_url = 'https://code.metoffice.gov.uk/svn/test'
+
+def get_svn_key():
+    """
+    Use the hexdigest of the md5 hash of
+    the Subversion URL as the svn key
+    """
+    return md5(svn_prekey).hexdigest()
 
 def save_svn_password(passwd):
     """
     Store the Subversion password in GPG agent
     """
-    key = md5('<https://code.metoffice.gov.uk:443> Met Office Code').hexdigest()
+    key = get_svn_key()
     gpg.preset_passphrase(key,passwd)
+
+def get_svn_password():
+    """
+    Ask GPG agent for the Subversion password
+    """
+    key = get_svn_key()
+    return gpg.get_passphrase(key)
 
 def request_credentials(user=None):
     """
@@ -94,12 +114,12 @@ def request_credentials(user=None):
     passwd = getpass('Please enter the MOSRS password for %s: '%user)
     return user, passwd
 
-def check_credentials(user, passwd):
+def check_credentials(url, user, passwd):
     """
     Try connecting to the Rose server with the provided credentials, raises an
     exception if this fails
     """
-    r = requests.get('https://code.metoffice.gov.uk/rosie', auth=(user, passwd))
+    r = requests.get(url, auth=(user, passwd))
     try:
         r.raise_for_status()
     except requests.exceptions.HTTPError:
@@ -115,12 +135,12 @@ def update(user=None):
     # Ask for credentials
     user, passwd = request_credentials(user)
     try:
-        check_credentials(user, passwd)
+        check_credentials(svn_url, user, passwd)
     except requests.exceptions.HTTPError:
         # Clear the user and try one more time
         user = None
         user, passwd = request_credentials(user)
-        check_credentials(user, passwd)
+        check_credentials(svn_url, user, passwd)
 
     save_rose_username(user)
     save_rose_password(passwd)
@@ -130,7 +150,9 @@ def check_or_update():
     user = get_rose_username()
     try:
         passwd = get_rose_password()
-        check_credentials(user, passwd)
+        check_credentials(rosie_url, user, passwd)
+        svn_passwd = get_svn_password()
+        check_credentials(svn_url, user, svn_passwd)
     except gpg.GPGError:
         # Password not in GPG
         update(user)
