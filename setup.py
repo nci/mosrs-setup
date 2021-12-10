@@ -24,7 +24,7 @@ setup(
         version  = '0.4.0',
         packages = find_packages(),
         install_requires = [
-            'python-ldap',
+            'python-ldap <= 3.3.1',
             'requests',
             ],
         entry_points = {
