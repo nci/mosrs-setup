@@ -47,8 +47,8 @@ def save_rose_username(username):
     Add the Rose username & server settings to Subversion's config file
     """
     # Run 'svn help' to create the config files if they don't exist
-    svn = Popen(['svn','help'],stdout=PIPE)
-    svn.communicate()
+    process = Popen(['svn','help'],stdout=PIPE)
+    process.communicate()
 
     config = SafeConfigParser()
     config.read(svn_servers)
@@ -65,20 +65,19 @@ def save_rose_username(username):
     with open(svn_servers, 'w') as f:
         config.write(f)
 
-rosie_key = 'rosie:https:code.metoffice.gov.uk'
-rosie_url = 'https://code.metoffice.gov.uk/rosie'
+rose_key = 'rosie:https:code.metoffice.gov.uk'
 
 def get_rose_password():
     """
     Ask GPG agent for the Rose password
     """
-    return gpg.get_passphrase(rosie_key)
+    return gpg.get_passphrase(rose_key)
 
 def save_rose_password(passwd):
     """
     Store the Rose password in GPG agent
     """
-    gpg.preset_passphrase(rosie_key,passwd)
+    gpg.preset_passphrase(rose_key,passwd)
 
 svn_prekey = '<https://code.metoffice.gov.uk:443> Met Office Code'
 svn_url = 'https://code.metoffice.gov.uk/svn/test'
@@ -114,18 +113,39 @@ def request_credentials(user=None):
     passwd = getpass('Please enter the MOSRS password for %s: '%user)
     return user, passwd
 
-def check_credentials(url, user, passwd):
+def check_rose_credentials(user, prefix='u'):
     """
-    Try connecting to the Rose server with the provided credentials, raises an
-    exception if this fails
+    Try rosie hello with prefix to make sure that the cached password is working
     """
-    r = requests.get(url, auth=(user, passwd))
-    try:
-        r.raise_for_status()
-    except requests.exceptions.HTTPError:
-        print("\nERROR: Unable to connect to MOSRS with your credentials")
-        raise
-    print("\nSuccessfully authenticated with MOSRS as %s"%user)
+    command = ['rosie', 'hello', '--prefix=' + prefix]
+    process = Popen(command, stdout=PIPE)
+    stdout, stderr = process.communicate()
+    stdout = '' if stdout is None else stdout
+    stderr = '' if stderr is None else stderr
+    unable_message = '\nERROR: Unable to access rosie prefix %s with your credentials.\n'%prefix
+    if process.returncode != 0:
+        raise Exception(unable_message + stderr)
+    if 'Hello ' + user in stdout:
+        print('\nSuccessfully accessed rosie with your credentials.')
+    else:
+        raise Exception(unable_message + stdout)
+
+def check_svn_credentials(url):
+    """
+    Try subversion list with url to make sure that the cached password is working
+    """
+    command = ['svn', 'info', '--non-interactive', svn_url]
+    process = Popen(command, stdout=PIPE)
+    stdout, stderr = process.communicate()
+    stdout = '' if stdout is None else stdout
+    stderr = '' if stderr is None else stderr
+    unable_message = '\nERROR: Unable to access %s via Subversion with your credentials.\n'%svn_url
+    if process.returncode != 0:
+        raise Exception(unable_message + stderr)
+    if 'Path:' in stdout:
+        print('\nSuccessfully accessed Subversion with your credentials.')
+    else:
+        raise Exception(unable_message + stdout)
 
 def update(user=None):
     """
@@ -135,24 +155,28 @@ def update(user=None):
     # Ask for credentials
     user, passwd = request_credentials(user)
     try:
-        check_credentials(svn_url, user, passwd)
+        save_rose_username(user)
+        save_rose_password(passwd)
+        check_rose_credentials(user)
+        save_svn_password(passwd)
+        check_svn_credentials(svn_url)
     except requests.exceptions.HTTPError:
         # Clear the user and try one more time
         user = None
         user, passwd = request_credentials(user)
-        check_credentials(svn_url, user, passwd)
-
-    save_rose_username(user)
-    save_rose_password(passwd)
-    save_svn_password(passwd)
+        save_rose_username(user)
+        save_rose_password(passwd)
+        check_rose_credentials(user)
+        save_svn_password(passwd)
+        check_svn_credentials(svn_url)
 
 def check_or_update():
     user = get_rose_username()
     try:
-        passwd = get_rose_password()
-        check_credentials(rosie_url, user, passwd)
-        svn_passwd = get_svn_password()
-        check_credentials(svn_url, user, svn_passwd)
+        get_rose_password()
+        check_rose_credentials(user)
+        get_svn_password()
+        check_svn_credentials(svn_url)
     except gpg.GPGError:
         # Password not in GPG
         update(user)
