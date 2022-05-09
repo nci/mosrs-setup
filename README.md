@@ -8,4 +8,6 @@ mosrs-auth: Saves a user's MOSRS password (mosrs/auth.py)
 
 access-auth: Saves a user's access-svn password (mosrs/access.py)
 
+nciws-auth: Saves a user's NCI password for web server access (mosrs/nciws.py)
+
 Passwords are stored in gpg-agent, using the interface in mosrs/gpg.py. Regardless of if MOSRS is being used, mosrs-setup should be run to set up gpg-agent (this only needs to be done once)
