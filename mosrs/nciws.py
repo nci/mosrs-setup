@@ -38,7 +38,7 @@ def main():
         return
     r.raise_for_status()
 
-    realm = '<https://repo-mirror.nci.org.au:443> NCI Repository Mirror'
+    realm = '<https://repo-mirror.nci.org.au:443> MOSRS SVN access'
     key = md5(realm).hexdigest()
     gpg.preset_passphrase(key, passwd)
 
