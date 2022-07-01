@@ -122,7 +122,7 @@ def check_rose_credentials(user, prefix='u'):
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = '\nERROR: Unable to access rosie prefix %s with your credentials.\n'%prefix
+    unable_message = '\nWARNING: Unable to access rosie prefix %s with your credentials.\n'%prefix
     if process.returncode != 0:
         raise Exception(unable_message + stderr)
     if 'Hello ' + user in stdout:
@@ -157,7 +157,6 @@ def update(user=None):
     try:
         save_rose_username(user)
         save_rose_password(passwd)
-        check_rose_credentials(user)
         save_svn_password(passwd)
         check_svn_credentials(svn_url)
     except requests.exceptions.HTTPError:
@@ -166,17 +165,25 @@ def update(user=None):
         user, passwd = request_credentials(user)
         save_rose_username(user)
         save_rose_password(passwd)
-        check_rose_credentials(user)
         save_svn_password(passwd)
         check_svn_credentials(svn_url)
+    # Check rose credentials separately, allowing failure
+    try:
+        check_rose_credentials(user)
+    except Exception as e:
+        print(e)
 
 def check_or_update():
     user = get_rose_username()
     try:
-        get_rose_password()
-        check_rose_credentials(user)
         get_svn_password()
         check_svn_credentials(svn_url)
+        # Check rose credentials, allowing failure
+        try:
+            get_rose_password()
+            check_rose_credentials(user)
+        except Exception as e:
+            print(e)
     except gpg.GPGError:
         # Password not in GPG
         update(user)
