@@ -25,7 +25,8 @@ setup(
         packages = find_packages(),
         install_requires = [
             'python-ldap <= 3.3.1',
-            'requests',
+            'certifi <= 2021.10.8',
+            'requests < 2.28',
             ],
         entry_points = {
             'console_scripts': [
