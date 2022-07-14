@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 Copyright 2016 ARC Centre of Excellence for Climate Systems Science
 
@@ -146,7 +146,7 @@ def register_mosrs_account():
     name, email = userinfo()
     name  = prompt_or_default('What is your name?',name)
     email = prompt_or_default('What is your work email address?',email)
-    request = Popen(['mail', '-s','MOSRS account request for %s'%name, 'access_help@nf.nci.org.au'], stdin=PIPE)
+    request = Popen(['mail', '-s','MOSRS account request for %s'%name, 'help@nci.org.au'], stdin=PIPE)
     request.communicate(dedent("""
             ACCESS user %s (NCI id %s, email <%s>) would like to request an account on MOSRS.
             Can the sponsor for their institution please submit a request on their behalf at
@@ -174,8 +174,7 @@ def setup_mosrs_account():
     else:
         print(dedent(
             """
-            If you need to access new versions of the UM please send a
-            request to 'cws_help@nci.org.au' saying that you'd like a MOSRS account
+            Please send a request to 'help@nci.org.au' saying that you'd like a MOSRS account
 
             Once you have an account run this script again
             """
@@ -216,33 +215,53 @@ def accesssvn_setup():
     except SetupError:
         todo('Once this has been done please run this setup script again\n')
 
-def on_ood():
+def get_host():
     hostname = socket.gethostname()
-    return hostname.startswith("ood")
+    for name in [
+            "accessdev",
+            "gadi-login",
+            "ood"]:
+        if name in hostname:
+            return name
+    for name in [
+            "gadi-analysis",
+            "gadi-dm",
+            ]:
+        if name in hostname:
+            return "ARE"
+    return "unsupported"
+
+def on_accessdev():
+    hostname = get_host()
+    return hostname == "accessdev"
+
+def on_ood():
+    hostname = get_host()
+    return hostname == "ood"
 
 def main():
     print('\n')
+    if on_accessdev():
+        print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
     if on_ood():
         print('Welcome to OOD, the NCI Open OnDemand service')
-    else:
-        print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
-    print('This script will set up your account to use Rose and the UM\n')
+    print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
         setup_mosrs_account()
 
-        if not on_ood():
+        if on_accessdev():
             check_gadi_ssh()
 
         # Account successfully created
-        print('You are now able to use Rose and the UM. To see a list of available experiments run:')
+        print('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
         print('    rosie go\n')
         print('Your password will be cached for a maximum of 12 hours. To store your password again run:')
         print('    mosrs-auth\n')
     except SetupError:
         todo('Once this has been done please run this setup script again\n')
     finally:
-        print('You can ask for help with the ACCESS systems by emailing "access_help@nf.nci.org.au"\n')
+        print('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
 
 if __name__ == '__main__':
     main()
