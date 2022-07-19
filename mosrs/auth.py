@@ -197,6 +197,8 @@ def main():
     args = parser.parse_args()
 
     try:
+        gpg.send('GETINFO version')
+        gpg.set_environ()
         if args.force:
             update(user=None)
         else:
