@@ -20,6 +20,7 @@ limitations under the License.
 from subprocess import Popen, PIPE
 from binascii import hexlify
 from urllib import unquote
+from os import environ
 
 
 class GPGError(Exception):
@@ -84,4 +85,20 @@ def _check_return(message,stdout):
     if result != "OK":
         raise GPGError(message,result)
 
+def set_environ():
+    """
+    For new GPG only, setup the assumed environment variables
+    GPG_TTY and GPG_AGENT_INFO
+    """
+    if is_new_gpg():
+        process = Popen(['tty'],stdout=PIPE)
+        stdout, stderr = process.communicate()
+        if process.returncode == 0:
+            stdout_line = stdout.splitlines()[0]
+            environ['GPG_TTY'] = stdout_line
+        process =  Popen(['gpgconf', '--list-dirs', 'agent-socket'],stdout=PIPE)
+        stdout, stderr = process.communicate()
+        if process.returncode == 0:
+            stdout_line = stdout.splitlines()[0]
+            environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
 
