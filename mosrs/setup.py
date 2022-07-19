@@ -88,6 +88,30 @@ def prompt_or_default(prompt, default):
         response = default
     return response
 
+def get_host():
+    hostname = socket.gethostname()
+    for name in [
+            "accessdev",
+            "gadi-login",
+            "ood"]:
+        if name in hostname:
+            return name
+    for name in [
+            "gadi-analysis",
+            "gadi-dm",
+            ]:
+        if name in hostname:
+            return "ARE"
+    return "unsupported"
+
+def on_accessdev():
+    hostname = get_host()
+    return hostname == "accessdev"
+
+def on_ood():
+    hostname = get_host()
+    return hostname == "ood"
+
 def gpg_startup():
     agent = dedent("""
     if gpg-agent --use-standard-socket-p; then
@@ -95,7 +119,7 @@ def gpg_startup():
         # Ensure that the agent is running.
         gpg-connect-agent /bye
         export GPG_TTY=$(tty)
-        export GPG_AGENT_INFO=$HOME/.gnupg/S.gpg-agent:0:1
+        export GPG_AGENT_INFO=$(gpgconf --list-dirs agent-socket):0:1
     else
         # Old GPG
         [ -f ~/.gpg-agent-info ] && source ~/.gpg-agent-info
@@ -122,11 +146,9 @@ def gpg_startup():
             with open(p,'a') as profile:
                 profile.write(agent)
 
-    host = "OOD" if on_ood() else "Accessdev"
     todo('GPG Agent has been added to your startup scripts. '+
-            'Please log out of ' + host +
+            'Please log out of ' + get_host() +
             ' then back in again to make sure it has been activated\n')
-
 
 def check_gpg_agent():
     """
@@ -138,6 +160,7 @@ def check_gpg_agent():
     try:
         gpg.send('GETINFO version')
         info('GPG Agent is running')
+        gpg.set_environ()
     except Exception:
         gpg_startup()
         raise SetupError
@@ -214,30 +237,6 @@ def accesssvn_setup():
         print('    access-auth\n')
     except SetupError:
         todo('Once this has been done please run this setup script again\n')
-
-def get_host():
-    hostname = socket.gethostname()
-    for name in [
-            "accessdev",
-            "gadi-login",
-            "ood"]:
-        if name in hostname:
-            return name
-    for name in [
-            "gadi-analysis",
-            "gadi-dm",
-            ]:
-        if name in hostname:
-            return "ARE"
-    return "unsupported"
-
-def on_accessdev():
-    hostname = get_host()
-    return hostname == "accessdev"
-
-def on_ood():
-    hostname = get_host()
-    return hostname == "ood"
 
 def main():
     print('\n')
