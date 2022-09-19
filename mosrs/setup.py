@@ -102,7 +102,7 @@ def check_gpg_agent():
 
 def setup_mosrs_account():
     """
-    Setup Mosrs
+    Setup MOSRS
     """
     check_gpg_agent()
     mosrs_request = None
@@ -111,15 +111,16 @@ def setup_mosrs_account():
         mosrs_request = mosrs_request.lower()
     if mosrs_request.startswith('y'):
         auth.check_or_update()
+        print('\n')
     else:
         print(dedent(
             """
-            Please send a request to 'help@nci.org.au' saying that you'd like a MOSRS account
-
-            Once you have an account run this script again
+            Please send a request for a MOSRS account to your MOSRS Group Sponsor, 
+            copying in the Lead Chief Investigator of your NCI project.
+            See https://my.nci.org.au for information on your project.
             """
         ))
-    print('\n')
+        raise SetupError
 
 def check_gadi_ssh():
     """
