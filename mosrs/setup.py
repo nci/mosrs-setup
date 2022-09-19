@@ -26,7 +26,7 @@ import ldap
 import getpass
 import socket
 
-from . import gpg, host, message
+from . import auth, gpg, host, message
 from host import get_host, on_accessdev, on_ood
 from message import info, warning, todo
 
