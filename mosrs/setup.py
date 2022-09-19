@@ -26,26 +26,9 @@ import ldap
 import getpass
 import socket
 
-from . import auth, gpg
-
-def colour(text, colour):
-    if colour == 'red':
-        code = '\033[31;1m'
-    elif colour == 'green':
-        code = '\033[32m'
-    elif colour == 'blue':
-        code = '\033[93m'
-    else:
-        raise Exception
-    reset = '\033[m'
-    return code + text + reset
-
-def info(text):
-    print("%s: %s"%(colour('INFO','blue'),text))
-def warning(text):
-    print("%s: %s"%(colour('WARN','red'),text))
-def todo(text):
-    print("%s: %s"%(colour('TODO','green'),text))
+from . import gpg, host, message
+from host import get_host, on_accessdev, on_ood
+from message import info, warning, todo
 
 class SetupError(Exception):
     """
@@ -87,30 +70,6 @@ def prompt_or_default(prompt, default):
     if response == '':
         response = default
     return response
-
-def get_host():
-    hostname = socket.gethostname()
-    for name in [
-            "accessdev",
-            "gadi-login",
-            "ood"]:
-        if name in hostname:
-            return name
-    for name in [
-            "gadi-analysis",
-            "gadi-dm",
-            ]:
-        if name in hostname:
-            return "ARE"
-    return "unsupported"
-
-def on_accessdev():
-    hostname = get_host()
-    return hostname == "accessdev"
-
-def on_ood():
-    hostname = get_host()
-    return hostname == "ood"
 
 def gpg_startup():
     agent = dedent("""
@@ -241,6 +200,7 @@ def accesssvn_setup():
 def main():
     print('\n')
     if on_accessdev():
+        warning('This version of mosrs-setup is not intended to run on accessdev and may not work correctly.')
         print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
     if on_ood():
         print('Welcome to OOD, the NCI Open OnDemand service')
