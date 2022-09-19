@@ -34,7 +34,6 @@ setup(
                 'mosrs-setup = mosrs.setup:main',
                 'access-auth = mosrs.access:main',
                 'nciws-auth  = mosrs.nciws:main',
-                'accesssvn-setup = mosrs.setup:accesssvn_setup',
                 ]
             }
         )

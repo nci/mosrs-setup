@@ -143,18 +143,6 @@ def check_gadi_ssh():
         warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
 
-def accesssvn_setup():
-    """
-    Setup GPG for access-svn access
-    """
-    try:
-        check_gpg_agent()
-        print('\n')
-        print('To store your password for 12 hours run:')
-        print('    access-auth\n')
-    except SetupError:
-        todo('Once this has been done please run this setup script again\n')
-
 def main():
     print('\n')
     if on_accessdev():
