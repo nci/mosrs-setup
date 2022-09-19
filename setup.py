@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
         name     = 'mosrs',
-        version  = '0.4.4',
+        version  = '0.4.5',
         packages = find_packages(),
         install_requires = [
             'python-ldap <= 3.3.1',
@@ -32,10 +32,7 @@ setup(
             'console_scripts': [
                 'mosrs-auth  = mosrs.auth:main',
                 'mosrs-setup = mosrs.setup:main',
-                'access-auth = mosrs.access:main',
                 'nciws-auth  = mosrs.nciws:main',
-                'accessdev-auth = mosrs.accessdev:main',
-                'accesssvn-setup = mosrs.setup:accesssvn_setup',
                 ]
             }
         )

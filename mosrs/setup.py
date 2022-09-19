@@ -36,30 +36,6 @@ class SetupError(Exception):
     """
     pass
 
-def userinfo():
-    """
-    Get current user's common name and email from LDAP
-
-    Returns: Tuple of (name, email)
-    """
-    l = ldap.initialize(ldap.get_option(ldap.OPT_URI))
-    people = 'ou=People,dc=apac,dc=edu,dc=au'
-    info = l.search_s(people, ldap.SCOPE_SUBTREE, '(uid=%s)'%getpass.getuser())
-
-    return (info[0][1]['cn'][0],info[0][1]['mail'][0])
-
-def prompt_bool(prompt):
-    """
-    Ask a yes/no question
-
-    Returns: true/false answer
-    """
-    raw_value = raw_input(prompt + ' [yes/no] ')
-    try:
-        return strtobool(raw_value)
-    except ValueError:
-        return ask_bool(prompt)
-
 def prompt_or_default(prompt, default):
     """
     Ask a question with a default answer
@@ -124,24 +100,6 @@ def check_gpg_agent():
         gpg_startup()
         raise SetupError
 
-def register_mosrs_account():
-    name, email = userinfo()
-    name  = prompt_or_default('What is your name?',name)
-    email = prompt_or_default('What is your work email address?',email)
-    request = Popen(['mail', '-s','MOSRS account request for %s'%name, 'help@nci.org.au'], stdin=PIPE)
-    request.communicate(dedent("""
-            ACCESS user %s (NCI id %s, email <%s>) would like to request an account on MOSRS.
-            Can the sponsor for their institution please submit a request on their behalf at
-                https://code.metoffice.gov.uk/trac/admin/newticket?type=account-request
-
-            You can check if they have an existing account at
-                https://code.metoffice.gov.uk/trac/home/wiki/UserList
-            """%(name, environ['USER'], email)))
-    print('\n')
-    info('Submitting MOSRS account request for %s <%s> to access_help'%(name,email))
-    info('Once your account has been activated (will take at least one UK business day) '+
-            'you will receive an email detailing how to set up your password\n')
-
 def setup_mosrs_account():
     """
     Setup Mosrs
@@ -163,13 +121,6 @@ def setup_mosrs_account():
         ))
     print('\n')
 
-def check_raijin_ssh():
-    """
-    Raijin has been decommissioned. There should no longer be any calls to this
-    procedure. In case there is, I'm leaving this stub in.
-    """
-    raise ValueError("raijin should no longer be used. Please contact CMS")
-
 def check_gadi_ssh():
     """
     Test Rose/Cylc can be found on Gadi
@@ -184,18 +135,6 @@ def check_gadi_ssh():
         warning('Unable to connect to Gadi')
         warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
         raise SetupError
-
-def accesssvn_setup():
-    """
-    Setup GPG for access-svn access
-    """
-    try:
-        check_gpg_agent()
-        print('\n')
-        print('To store your password for 12 hours run:')
-        print('    access-auth\n')
-    except SetupError:
-        todo('Once this has been done please run this setup script again\n')
 
 def main():
     print('\n')
