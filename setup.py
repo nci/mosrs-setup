@@ -33,7 +33,6 @@ setup(
                 'mosrs-auth  = mosrs.auth:main',
                 'mosrs-setup = mosrs.setup:main',
                 'nciws-auth  = mosrs.nciws:main',
-                'accessdev-auth = mosrs.accessdev:main',
                 ]
             }
         )
