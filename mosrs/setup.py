@@ -121,13 +121,6 @@ def setup_mosrs_account():
         ))
     print('\n')
 
-def check_raijin_ssh():
-    """
-    Raijin has been decommissioned. There should no longer be any calls to this
-    procedure. In case there is, I'm leaving this stub in.
-    """
-    raise ValueError("raijin should no longer be used. Please contact CMS")
-
 def check_gadi_ssh():
     """
     Test Rose/Cylc can be found on Gadi
