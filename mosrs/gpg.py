@@ -26,11 +26,6 @@ from os import environ
 class GPGError(Exception):
     pass
 
-def is_new_gpg():
-    gpg_agent = Popen(['gpg-agent', '--use-standard-socket-p'])
-    gpg_agent.communicate()
-    return gpg_agent.returncode == 0
-
 def get_passphrase(cache_id):
     """
     Get a passphrase from the cache
@@ -71,8 +66,6 @@ def send(message):
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
         message = "ERROR connecting to gpg-agent." 
-        if not is_new_gpg():
-            message.append(" Try removing the file '~/.gpg-agent-info' and relogging") 
         raise Exception(message)
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
@@ -87,18 +80,16 @@ def _check_return(message,stdout):
 
 def set_environ():
     """
-    For new GPG only, setup the assumed environment variables
-    GPG_TTY and GPG_AGENT_INFO
+    Setup the assumed environment variables GPG_TTY and GPG_AGENT_INFO
     """
-    if is_new_gpg():
-        process = Popen(['tty'],stdout=PIPE)
-        stdout, stderr = process.communicate()
-        if process.returncode == 0:
-            stdout_line = stdout.splitlines()[0]
-            environ['GPG_TTY'] = stdout_line
-        process =  Popen(['gpgconf', '--list-dirs', 'agent-socket'],stdout=PIPE)
-        stdout, stderr = process.communicate()
-        if process.returncode == 0:
-            stdout_line = stdout.splitlines()[0]
-            environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
+    process = Popen(['tty'],stdout=PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode == 0:
+        stdout_line = stdout.splitlines()[0]
+        environ['GPG_TTY'] = stdout_line
+    process =  Popen(['gpgconf', '--list-dirs', 'agent-socket'],stdout=PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode == 0:
+        stdout_line = stdout.splitlines()[0]
+        environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
 

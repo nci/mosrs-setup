@@ -27,7 +27,7 @@ import getpass
 import socket
 
 from . import auth, gpg, host, message
-from host import get_host, on_accessdev, on_ood
+from host import get_host, on_accessdev
 from message import info, warning, todo
 
 class SetupError(Exception):
@@ -122,35 +122,15 @@ def setup_mosrs_account():
         ))
         raise SetupError
 
-def check_gadi_ssh():
-    """
-    Test Rose/Cylc can be found on Gadi
-    """
-    print('Testing Rose can be accessed on Gadi...')
-    # ssh -oBatchMode=yes /projects/access/bin/cylc --version
-    ssh = Popen(['ssh','-oBatchMode=yes','gadi','/projects/access/bin/cylc --version'])
-    result = ssh.wait()
-    if result == 0:
-        print('Successfully found Rose\n')
-    else:
-        warning('Unable to connect to Gadi')
-        warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
-        raise SetupError
-
 def main():
     print('\n')
     if on_accessdev():
-        warning('This version of mosrs-setup is not intended to run on accessdev and may not work correctly.')
-        print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
-    if on_ood():
-        print('Welcome to OOD, the NCI Open OnDemand service')
+        warning('This version of mosrs-setup is not intended to run on accessdev.')
+        return
     print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
         setup_mosrs_account()
-
-        if on_accessdev():
-            check_gadi_ssh()
 
         # Account successfully created
         print('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')

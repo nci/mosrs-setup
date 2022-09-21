@@ -38,7 +38,3 @@ def on_accessdev():
     hostname = get_host()
     return hostname == "accessdev"
 
-def on_ood():
-    hostname = get_host()
-    return hostname == "ood"
-
