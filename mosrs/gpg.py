@@ -78,6 +78,15 @@ def _check_return(message,stdout):
     if result != "OK":
         raise GPGError(message,result)
 
+def get_environ():
+    """
+    Get the environment variables GPG_TTY and GPG_AGENT_INFO.
+    If the users's startup script has already been updated and run, 
+    these variables should exist. If either variable does not exist,
+    this function is expected to throw KeyError.
+    """
+    return (environ['GPG_TTY'], environ['GPG_AGENT_INFO'])
+
 def set_environ():
     """
     Setup the assumed environment variables GPG_TTY and GPG_AGENT_INFO

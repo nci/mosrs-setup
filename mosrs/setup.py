@@ -47,7 +47,7 @@ def prompt_or_default(prompt, default):
         response = default
     return response
 
-def gpg_startup():
+def gpg_startup(status):
     gpg_agent_script = dedent("""
     function export_gpg_agent {
         export GPG_TTY=$(tty)
@@ -68,21 +68,25 @@ def gpg_startup():
     f = '.bashrc'
     p = path.join(home,f)
     if path.exists(p):
-        # Check if gpg-agent is already referenced
+        # Check if gpg-connect-agent is already referenced
         grep = Popen(['grep','gpg-connect-agent',p],
-                stdout=PIPE)
+                     stdout=PIPE)
         grep.communicate()
         if grep.returncode == 0:
-            warning('GPG Agent is referenced in ~/%s but is not currently running.\n'%f+
-                'Please log out of ' + get_host() +
-                ' then back in again to check that it has been activated.\n' +
-                'If that doesn\'t work please contact the helpdesk.')
+            common_message = 'GPG agent is referenced in ~/{} but '.format(f)
+            if status == 'undefined':
+                warning(common_message + 'GPG environment variables are not defined.')
+            else:
+                warning(common_message + 'but is not currently running.')
+            todo('Please log out of ' + get_host() +
+                ' then back in again to check that GPG agent has been activated.')
+            todo('If that doesn\'t work please contact the helpdesk.')
             return
 
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
         grep = Popen(['grep',boilerplate,p],
-                stdout=PIPE)
+                     stdout=PIPE)
         grep.communicate()
         if grep.returncode == 0:
             # Boilerplate has been found
@@ -110,12 +114,15 @@ def check_gpg_agent():
 
     If not then add an activation script to the user's startup script
     """
+    status = 'undefined'
     try:
+        tty, agent_info = gpg.get_environ()
+        status = 'defined'
         gpg.send('GETINFO version')
         info('GPG Agent is running')
         gpg.set_environ()
     except Exception:
-        gpg_startup()
+        gpg_startup(status)
         raise SetupError
 
 def setup_mosrs_account():
