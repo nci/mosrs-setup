@@ -20,14 +20,14 @@ limitations under the License.
 from __future__ import print_function
 from subprocess import Popen, PIPE
 from textwrap import dedent
-from os import environ, path
+from os import environ, rename, path
 from distutils.util import strtobool
 import ldap
 import getpass
 import socket
 
 from . import auth, gpg, host, message
-from host import get_host, on_accessdev, on_ood
+from host import get_host, on_accessdev
 from message import info, warning, todo
 
 class SetupError(Exception):
@@ -47,57 +47,82 @@ def prompt_or_default(prompt, default):
         response = default
     return response
 
-def gpg_startup():
-    agent = dedent("""
-    if gpg-agent --use-standard-socket-p; then
-        # New GPG always returns 0.
-        # Ensure that the agent is running.
-        gpg-connect-agent /bye
+def gpg_startup(status):
+    gpg_agent_script = dedent("""
+    function export_gpg_agent {
         export GPG_TTY=$(tty)
-        export GPG_AGENT_INFO=$(gpgconf --list-dirs agent-socket):0:1
-    else
-        # Old GPG
-        [ -f ~/.gpg-agent-info ] && source ~/.gpg-agent-info
-        if [ -S "${GPG_AGENT_INFO%%:*}" ]; then
-            export GPG_AGENT_INFO
-        else
-            eval $( gpg-agent --daemon --allow-preset-passphrase --batch --max-cache-ttl 43200 --write-env-file ~/.gpg-agent-info )
+        export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
+    }
+    function check_gpg_agent {
+        gpg-connect-agent /bye
+        export_gpg_agent
+    }
+    if in_interactive_shell; then
+        if in_login_shell; then
+            # start the GPG agent
+            check_gpg_agent
         fi
     fi
     """)
     home = environ['HOME']
-    for f in ['.profile','.bash_profile']:
-        p = path.join(home,f)
-        if path.exists(p):
-            # Check if gpg-agent is already referenced
-            grep = Popen(['grep','gpg-agent',p],stdout=PIPE)
-            grep.communicate()
-            if grep.returncode == 0:
-                warning('GPG Agent is referenced in ~/%s but is not currently running. '%f+
-                        'Try relogging to start it again, if that doesn\'t work please contact the helpdesk')
-                continue
+    f = '.bashrc'
+    p = path.join(home,f)
+    if path.exists(p):
+        # Check if gpg-connect-agent is already referenced
+        grep = Popen(['grep','gpg-connect-agent',p],
+                     stdout=PIPE)
+        grep.communicate()
+        if grep.returncode == 0:
+            common_message = 'GPG agent is referenced in ~/{} but '.format(f)
+            if status == 'undefined':
+                warning(common_message + 'GPG environment variables are not defined.')
+            else:
+                warning(common_message + 'but is not currently running.')
+            todo('Please log out of ' + get_host() +
+                ' then back in again to check that GPG agent has been activated.')
+            todo('If that doesn\'t work please contact the helpdesk.')
+            return
 
-            # Add script to file
-            with open(p,'a') as profile:
-                profile.write(agent)
+        # Look for NCI boilerplate in startup file
+        boilerplate = 'if in_interactive_shell; then'
+        grep = Popen(['grep',boilerplate,p],
+                     stdout=PIPE)
+        grep.communicate()
+        if grep.returncode == 0:
+            # Boilerplate has been found
+            old_f = f + '.old'
+            old_p = path.join(home,old_f)
+            rename(p,old_p)
+            with open(old_p,'r') as old_startup_file:
+                old = old_startup_file.read()
+                insert_here = old.find(boilerplate)
+                new = old[:insert_here] + gpg_agent_script + old[insert_here:]
+                with open(p,'w') as startup_file:
+                    startup_file.write(new)
+        else:
+            # Append gpg_agent_script to file
+            with open(p,'a') as startup_file:
+                startup_file.write(gpg_agent_script)
 
-    todo('GPG Agent has been added to your startup scripts. '+
+    todo('GPG Agent has been added to your startup script. '+
             'Please log out of ' + get_host() +
-            ' then back in again to make sure it has been activated\n')
+            ' then back in again to make sure it has been activated.')
 
 def check_gpg_agent():
     """
     Make sure GPG-Agent is running
 
-    If the environment variable is not found add activation script to the
-    users's .profile
+    If not then add an activation script to the user's startup script
     """
+    status = 'undefined'
     try:
+        tty, agent_info = gpg.get_environ()
+        status = 'defined'
         gpg.send('GETINFO version')
         info('GPG Agent is running')
         gpg.set_environ()
     except Exception:
-        gpg_startup()
+        gpg_startup(status)
         raise SetupError
 
 def setup_mosrs_account():
@@ -115,42 +140,22 @@ def setup_mosrs_account():
     else:
         print(dedent(
             """
-            Please send a request for a MOSRS account to your MOSRS Group Sponsor, 
+            Please send a request for a MOSRS account to your MOSRS Group Sponsor,
             copying in the Lead Chief Investigator of your NCI project.
             See https://my.nci.org.au for information on your project.
             """
         ))
         raise SetupError
 
-def check_gadi_ssh():
-    """
-    Test Rose/Cylc can be found on Gadi
-    """
-    print('Testing Rose can be accessed on Gadi...')
-    # ssh -oBatchMode=yes /projects/access/bin/cylc --version
-    ssh = Popen(['ssh','-oBatchMode=yes','gadi','/projects/access/bin/cylc --version'])
-    result = ssh.wait()
-    if result == 0:
-        print('Successfully found Rose\n')
-    else:
-        warning('Unable to connect to Gadi')
-        warning('Follow the instructions at https://accessdev.nci.org.au/trac/wiki/Guides/SSH to set up a SSH agent\n')
-        raise SetupError
-
 def main():
     print('\n')
     if on_accessdev():
-        warning('This version of mosrs-setup is not intended to run on accessdev and may not work correctly.')
-        print('Welcome to Accessdev, the user interface and control server for the ACCESS model at NCI')
-    if on_ood():
-        print('Welcome to OOD, the NCI Open OnDemand service')
+        warning('This version of mosrs-setup is not intended to run on accessdev.')
+        return
     print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
         setup_mosrs_account()
-
-        if on_accessdev():
-            check_gadi_ssh()
 
         # Account successfully created
         print('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')

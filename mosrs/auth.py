@@ -28,7 +28,7 @@ from subprocess import Popen, PIPE
 import requests
 
 from . import gpg, host
-from host import get_host, on_accessdev, on_ood
+from host import get_host, on_accessdev
 from message import info, warning, todo
 
 svn_servers = os.path.join(os.environ['HOME'],'.subversion/servers')
@@ -195,7 +195,8 @@ def check_or_update():
 
 def main():
     if on_accessdev():
-        warning('This version of mosrs-auth is not intended to run on accessdev and may not work correctly.')
+        warning('This version of mosrs-auth is not intended to run on accessdev.')
+        return
 
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
     parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
