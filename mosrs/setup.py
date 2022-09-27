@@ -49,6 +49,7 @@ def prompt_or_default(prompt, default):
 
 def gpg_startup(status):
     gpg_agent_script = dedent("""
+    # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
     function export_gpg_agent {
         export GPG_TTY=$(tty)
         export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
@@ -63,17 +64,24 @@ def gpg_startup(status):
             check_gpg_agent
         fi
     fi
+    # mosrs-setup gpg_agent_script: END
+
     """)
     home = environ['HOME']
     f = '.bashrc'
     p = path.join(home,f)
-    if path.exists(p):
+    if not path.exists(p):
+        warning('Startup script ~/{} does not exist'.format(f))
+        todo('Please contact the helpdesk.')
+        return
+    else:
         # Check if gpg-connect-agent is already referenced
-        grep = Popen(['grep','gpg-connect-agent',p],
-                     stdout=PIPE)
-        grep.communicate()
-        if grep.returncode == 0:
-            common_message = 'GPG agent is referenced in ~/{} but '.format(f)
+        grep_gpg_agent_script = Popen(
+                ['grep','mosrs-setup gpg_agent_script',p],
+                stdout=PIPE)
+        grep_gpg_agent_script.communicate()
+        if grep_gpg_agent_script.returncode == 0:
+            common_message = 'Startup script ~/{} contains gpg_agent_script but '.format(f)
             if status == 'undefined':
                 warning(common_message + 'GPG environment variables are not defined.')
             else:
@@ -85,10 +93,10 @@ def gpg_startup(status):
 
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
-        grep = Popen(['grep',boilerplate,p],
+        grep_boilerplate = Popen(['grep',boilerplate,p],
                      stdout=PIPE)
-        grep.communicate()
-        if grep.returncode == 0:
+        grep_boilerplate.communicate()
+        if grep_boilerplate.returncode == 0:
             # Boilerplate has been found
             old_f = f + '.old'
             old_p = path.join(home,old_f)
