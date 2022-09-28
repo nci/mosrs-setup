@@ -55,6 +55,7 @@ def gpg_startup(status):
         export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
     }
     function check_gpg_agent {
+        mkdir -p $HOME/.gnupg
         gpg-connect-agent /bye
         export_gpg_agent
     }
