@@ -144,8 +144,14 @@ def setup_mosrs_account():
         mosrs_request = prompt_or_default("Do you have a MOSRS account", "yes")
         mosrs_request = mosrs_request.lower()
     if mosrs_request.startswith('y'):
-        auth.check_or_update()
-        print('\n')
+        try:
+            auth.check_or_update()
+            print('\n')
+        except Exception as e:
+            warning('Authentication check and update failed.')
+            for arg in e.args:
+                print(e)
+            raise SetupError
     else:
         print(dedent(
             """

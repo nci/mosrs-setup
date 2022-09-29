@@ -173,7 +173,9 @@ def update(user=None):
     try:
         check_rose_credentials(user)
     except Exception as e:
-        print(e)
+        warning('Rose authentication failed')
+        for arg in e.args:
+            print(arg)
 
 def check_or_update():
     user = get_rose_username()
@@ -187,14 +189,24 @@ def check_or_update():
         try:
             get_rose_password()
             check_rose_credentials(user)
+        except gpg.GPGError as e:
+            # Password not in GPG
+            raise
         except Exception as e:
-            print(e)
-    except gpg.GPGError:
+            warning('Rose authentication failed.')
+            for arg in e.args:
+                print(arg)
+    except gpg.GPGError as e:
         # Password not in GPG
         update(user)
-    except requests.exceptions.HTTPError:
-        # Testing authentication failed
+    except requests.exceptions.HTTPError as e:
+        # Authentication failed
+        warning('Subversion authentication failed: requests.exceptions.HTTPError\n{}'.format(e.response))
         update(user)
+    except Exception as e:
+        warning('Subversion authentication failed.')
+        for arg in e.args:
+            print(arg)
 
 def main():
     if on_accessdev():
@@ -216,7 +228,8 @@ def main():
     except requests.exceptions.HTTPError:
         print("\nERROR: Please check your credentials, if you have recently reset your password it may take a bit of time for the server to recognise the new password")
     except Exception as e:
-        print(e)
+        for arg in e.args:
+            print(arg)
 
 if __name__ == '__main__':
     main()
