@@ -177,6 +177,9 @@ def update(user=None):
 
 def check_or_update():
     user = get_rose_username()
+    if user is None:
+        update()
+        return
     try:
         get_svn_password()
         check_svn_credentials(svn_url)
