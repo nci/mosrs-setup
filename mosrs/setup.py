@@ -146,14 +146,13 @@ def setup_mosrs_account():
     if mosrs_request.startswith('y'):
         try:
             auth.check_or_update()
-            print('\n')
         except Exception as e:
             warning('Authentication check and update failed.')
             for arg in e.args:
-                print(e)
+                info(e)
             raise SetupError
     else:
-        print(dedent(
+        todo(dedent(
             """
             Please send a request for a MOSRS account to your MOSRS Group Sponsor,
             copying in the Lead Chief Investigator of your NCI project.
@@ -163,7 +162,7 @@ def setup_mosrs_account():
         raise SetupError
 
 def main():
-    print('\n')
+    print()
     if on_accessdev():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
@@ -173,14 +172,16 @@ def main():
         setup_mosrs_account()
 
         # Account successfully created
-        print('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
+        info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
         print('    rosie go\n')
-        print('Your password will be cached for a maximum of 12 hours. To store your password again run:')
+        info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
         print('    mosrs-auth\n')
     except SetupError:
-        todo('Once this has been done please run this setup script again\n')
+        todo('Please check your credentials. '
+           + 'If you have recently reset your password it may take a bit of time for the server to recognise the new password. '
+           + 'Once this has been done please run this setup script again.')
     finally:
-        print('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
+        info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
 
 if __name__ == '__main__':
     main()
