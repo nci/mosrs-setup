@@ -20,11 +20,11 @@ from __future__ import print_function
 
 def colour(text, colour):
     if colour == 'red':
-        code = '\033[31;1m'
+        code = '\033[91m'
     elif colour == 'green':
         code = '\033[32m'
     elif colour == 'blue':
-        code = '\033[93m'
+        code = '\033[94m'
     else:
         raise Exception
     reset = '\033[m'
