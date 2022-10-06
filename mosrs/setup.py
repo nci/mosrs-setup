@@ -150,13 +150,13 @@ def setup_mosrs_account():
             warning('Authentication check and update failed.')
             for arg in e.args:
                 info(e)
-            raise SetupError
             todo(dedent(
                 """
                 Please check your credentials. If you have recently reset your password 
                 it may take a bit of time for the server to recognise the new password.
                 """
             ))
+            raise SetupError
     else:
         todo(dedent(
             """
@@ -185,6 +185,10 @@ def main():
         print('    mosrs-auth\n')
     except SetupError:
         todo('Once this has been done please run this setup script again.')
+    except Exception as e:
+        warning('Unexpected exception in mosrs-setup:')
+        for arg in e.args:
+            info(e)
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
 
