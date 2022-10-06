@@ -114,8 +114,8 @@ def gpg_startup(status):
                 startup_file.write(gpg_agent_script)
 
     todo('GPG Agent has been added to your startup script. '+
-            'Please log out of ' + get_host() +
-            ' then back in again to make sure it has been activated.')
+         'Please log out of {}'.format(get_host()) +
+         ' then back in again to make sure it has been activated.')
 
 def check_gpg_agent():
     """
@@ -151,6 +151,12 @@ def setup_mosrs_account():
             for arg in e.args:
                 info(e)
             raise SetupError
+            todo(dedent(
+                """
+                Please check your credentials. If you have recently reset your password 
+                it may take a bit of time for the server to recognise the new password.
+                """
+            ))
     else:
         todo(dedent(
             """
@@ -172,14 +178,13 @@ def main():
         setup_mosrs_account()
 
         # Account successfully created
+        print()
         info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
         print('    rosie go\n')
         info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
         print('    mosrs-auth\n')
     except SetupError:
-        todo('Please check your credentials. '
-           + 'If you have recently reset your password it may take a bit of time for the server to recognise the new password. '
-           + 'Once this has been done please run this setup script again.')
+        todo('Once this has been done please run this setup script again.')
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
 
