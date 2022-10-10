@@ -42,12 +42,12 @@ def prompt_or_default(prompt, default):
 
     Returns: answer or default
     """
-    response = raw_input('%s [%s]: '%(prompt,default)).strip()
+    response = raw_input('{} [{}]: '.format(prompt,default)).strip()
     if response == '':
         response = default
     return response
 
-def gpg_startup(status):
+def gpg_startup(gpg_environ):
     gpg_agent_script = dedent("""
     # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
     function export_gpg_agent {
@@ -74,28 +74,28 @@ def gpg_startup(status):
     if not path.exists(p):
         warning('Startup script ~/{} does not exist'.format(f))
         todo('Please contact the helpdesk.')
-        return
+        raise SetupError
     else:
         # Check if gpg-connect-agent is already referenced
-        grep_gpg_agent_script = Popen(
-                ['grep','mosrs-setup gpg_agent_script',p],
-                stdout=PIPE)
+        grep_gpg_agent_script = Popen(['grep','mosrs-setup gpg_agent_script',p],
+                                stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
-            common_message = 'Startup script ~/{} contains gpg_agent_script but '.format(f)
-            if status == 'undefined':
-                warning(common_message + 'GPG environment variables are not defined.')
+            if gpg_environ is not None:
+                return
             else:
-                warning(common_message + 'but is not currently running.')
-            todo('Please log out of ' + get_host() +
-                ' then back in again to check that GPG agent has been activated.')
-            todo('If that doesn\'t work please contact the helpdesk.')
-            return
+                warning(
+                    'Startup script ~/{} contains gpg_agent_script but '.format(f) +
+                    'GPG environment variables are not defined.')
+                todo('Please log out of {} then back in again '.format(get_host()) +
+                     'to check that GPG environment variables are defined.')
+                todo('If that doesn\'t work please contact the helpdesk.')
+                raise SetupError
 
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
         grep_boilerplate = Popen(['grep',boilerplate,p],
-                     stdout=PIPE)
+                           stdout=PIPE)
         grep_boilerplate.communicate()
         if grep_boilerplate.returncode == 0:
             # Boilerplate has been found
@@ -113,32 +113,46 @@ def gpg_startup(status):
             with open(p,'a') as startup_file:
                 startup_file.write(gpg_agent_script)
 
-    todo('GPG Agent has been added to your startup script. '+
-         'Please log out of {}'.format(get_host()) +
-         ' then back in again to make sure it has been activated.')
+    todo('GPG Agent has been added to your startup script. ' +
+         'Please log out of {} then back in again '.format(get_host()) +
+         'to make sure it has been activated.')
+    raise SetupError
 
-def check_gpg_agent():
+def check_gpg_startup():
     """
-    Make sure GPG-Agent is running
-
-    If not then add an activation script to the user's startup script
+    Check that GPG environment variables are defined
+    and add GPG agent to startup if needed.
     """
-    status = 'undefined'
+    gpg_environ = None
     try:
-        tty, agent_info = gpg.get_environ()
-        status = 'defined'
-        gpg.send('GETINFO version')
-        info('GPG Agent is running')
-        gpg.set_environ()
-    except Exception:
-        gpg_startup(status)
+        gpg_environ = gpg.get_environ()
+    except KeyError:
+        pass
+    gpg_startup(gpg_environ)
+
+def start_gpg_agent():
+    """
+    Start the GPG agent if it has not already started
+    """
+    try:
+        gpg.start_gpg_agent()
+    except gpg.GPGError as e:
+        warning('GPGError in gpg.start_gpg_agent')
+        info(e.result)
+        raise SetupError
+    except Exception as e:
+        warning('Exception in gpg.start_gpg_agent')
+        for arg in e.args:
+            info(e)
         raise SetupError
 
 def setup_mosrs_account():
     """
     Setup MOSRS
     """
-    check_gpg_agent()
+    check_gpg_startup()
+    start_gpg_agent()
+    # Save account details and cache credentials
     mosrs_request = None
     while mosrs_request not in ['yes', 'no', 'y', 'n']:
         mosrs_request = prompt_or_default("Do you have a MOSRS account", "yes")
@@ -152,7 +166,7 @@ def setup_mosrs_account():
                 info(e)
             todo(dedent(
                 """
-                Please check your credentials. If you have recently reset your password 
+                Please check your credentials. If you have recently reset your password
                 it may take a bit of time for the server to recognise the new password.
                 """
             ))
