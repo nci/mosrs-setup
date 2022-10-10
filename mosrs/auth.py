@@ -28,6 +28,12 @@ from . import gpg, host
 from host import on_accessdev
 from message import info, warning, todo
 
+class AuthError(Exception):
+    """
+    Indicates an anticipated but unrecoverable error
+    """
+    pass
+
 svn_servers = os.path.join(os.environ['HOME'],'.subversion/servers')
 
 def get_rose_username():
@@ -154,8 +160,8 @@ def check_rose_credentials(user, prefix='u'):
     """
     command = ['rosie', 'hello', '--prefix=' + prefix]
     process = Popen(
-            command, 
-            stdout=PIPE, 
+            command,
+            stdout=PIPE,
             stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
@@ -174,8 +180,8 @@ def check_svn_credentials(url):
     """
     command = ['svn', 'info', '--non-interactive', svn_url]
     process = Popen(
-            command, 
-            stdout=PIPE, 
+            command,
+            stdout=PIPE,
             stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
@@ -252,6 +258,22 @@ def check_or_update():
         for arg in e.args:
             info(arg)
 
+def start_gpg_agent():
+    """
+    Start the GPG agent if it has not already started
+    """
+    try:
+        gpg.start_gpg_agent()
+    except gpg.GPGError as e:
+        warning('GPGError in gpg.start_gpg_agent')
+        info(e.result)
+        raise AuthError
+    except Exception as e:
+        warning('Exception in gpg.start_gpg_agent')
+        for arg in e.args:
+            info(e)
+        raise AuthError
+
 def main():
     if on_accessdev():
         warning('This version of mosrs-auth is not intended to run on accessdev.')
@@ -261,11 +283,13 @@ def main():
     parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
     args = parser.parse_args()
 
+    # Start the GPG agent if it has not already started
     try:
-        # Ensure that GPG agent is running
-        gpg.send('GETINFO version')
-        gpg.set_environ()
-        
+        start_gpg_agent()
+    except AuthError:
+        todo('Please contact the helpdesk.')
+    # Check or update the user's credentials
+    try:
         if args.force:
             update(user=None)
         else:
