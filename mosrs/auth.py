@@ -17,7 +17,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from __future__ import print_function
-import sys
 import os
 import argparse
 from getpass import getpass
@@ -25,11 +24,15 @@ from ConfigParser import SafeConfigParser
 from hashlib import md5
 from subprocess import Popen, PIPE
 
-import requests
-
 from . import gpg, host
-from host import get_host, on_accessdev
+from host import on_accessdev
 from message import info, warning, todo
+
+class AuthError(Exception):
+    """
+    Indicates an anticipated but unrecoverable error
+    """
+    pass
 
 svn_servers = os.path.join(os.environ['HOME'],'.subversion/servers')
 
@@ -69,17 +72,36 @@ def save_rose_username(username):
 
 rose_key = 'rosie:https:code.metoffice.gov.uk'
 
+def save_rose_password(passwd):
+    """
+    Store the Rose password in GPG agent
+    """
+    gpg.preset_passphrase(rose_key,passwd)
+
 def get_rose_password():
     """
     Ask GPG agent for the Rose password
     """
     return gpg.get_passphrase(rose_key)
 
-def save_rose_password(passwd):
+def rose_password_is_cached():
     """
-    Store the Rose password in GPG agent
+    Check if the Rose password is cached
     """
-    gpg.preset_passphrase(rose_key,passwd)
+    try:
+        get_rose_password()
+    except gpg.GPGError as e:
+        # Password not in GPG
+        info('Rose password is not in cached.')
+        update(user)
+        return False
+    except Exception as e:
+        warning('Rose password retrieval failed.')
+        for arg in e.args:
+            info(arg)
+        update(user)
+        return False
+    return True
 
 svn_prekey = '<https://code.metoffice.gov.uk:443> Met Office Code'
 svn_url = 'https://code.metoffice.gov.uk/svn/test'
@@ -105,6 +127,23 @@ def get_svn_password():
     key = get_svn_key()
     return gpg.get_passphrase(key)
 
+def svn_password_is_cached():
+    """
+    Check if the Subversion password is cached
+    """
+    try:
+        get_svn_password()
+    except gpg.GPGError as e:
+        # Password not in GPG
+        info('Subversion password is not cached.')
+        return False
+    except Exception as e:
+        warning('Subversion password retrieval failed.')
+        for arg in e.args:
+            info(arg)
+        return False
+    return True
+
 def request_credentials(user=None):
     """
     Request credentials from the user. If user=None then ask for the username
@@ -112,7 +151,7 @@ def request_credentials(user=None):
     """
     if user is None:
         user = raw_input('Please enter your MOSRS username: ')
-    passwd = getpass('Please enter the MOSRS password for %s: '%user)
+    passwd = getpass('Please enter the MOSRS password for {}: '.format(user))
     return user, passwd
 
 def check_rose_credentials(user, prefix='u'):
@@ -120,32 +159,38 @@ def check_rose_credentials(user, prefix='u'):
     Try rosie hello with prefix to make sure that the cached password is working
     """
     command = ['rosie', 'hello', '--prefix=' + prefix]
-    process = Popen(command, stdout=PIPE)
+    process = Popen(
+            command,
+            stdout=PIPE,
+            stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = '\nWARNING: Unable to access rosie prefix %s with your credentials.\n'%prefix
+    unable_message = 'Unable to access rosie prefix {} with your credentials.'.format(prefix)
     if process.returncode != 0:
         raise Exception(unable_message + stderr)
     if 'Hello ' + user in stdout:
-        print('\nSuccessfully accessed rosie with your credentials.')
+        info('Successfully accessed rosie with your credentials.')
     else:
         raise Exception(unable_message + stdout)
 
 def check_svn_credentials(url):
     """
-    Try subversion list with url to make sure that the cached password is working
+    Try subversion info with url to make sure that the cached password is working
     """
     command = ['svn', 'info', '--non-interactive', svn_url]
-    process = Popen(command, stdout=PIPE)
+    process = Popen(
+            command,
+            stdout=PIPE,
+            stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = '\nERROR: Unable to access %s via Subversion with your credentials.\n'%svn_url
+    unable_message = 'Unable to access {} via Subversion with your credentials.'.format(svn_url)
     if process.returncode != 0:
         raise Exception(unable_message + stderr)
     if 'Path:' in stdout:
-        print('\nSuccessfully accessed Subversion with your credentials.')
+        info('Successfully accessed Subversion with your credentials.')
     else:
         raise Exception(unable_message + stdout)
 
@@ -160,41 +205,74 @@ def update(user=None):
         save_rose_username(user)
         save_rose_password(passwd)
         save_svn_password(passwd)
+    except Exception as e:
+        warning('Saving credentials failed in update.')
+        raise
+    try:
         check_svn_credentials(svn_url)
-    except requests.exceptions.HTTPError:
+    except:
         # Clear the user and try one more time
+        warning('Subversion authentication failed in update.')
         user = None
         user, passwd = request_credentials(user)
         save_rose_username(user)
         save_rose_password(passwd)
         save_svn_password(passwd)
         check_svn_credentials(svn_url)
-    # Check rose credentials separately, allowing failure
+    # Check Rose credentials separately, allowing failure
     try:
         check_rose_credentials(user)
     except Exception as e:
-        print(e)
+        warning('Rose authentication failed in update.')
+        print(type(e))
+        for arg in e.args:
+            info(arg)
 
 def check_or_update():
     user = get_rose_username()
     if user is None:
         update()
         return
+    # Check Subversion password cache
+    if not svn_password_is_cached():
+        update(user)
+        return
+    # Check Subversion credentials
     try:
-        get_svn_password()
         check_svn_credentials(svn_url)
-        # Check rose credentials, allowing failure
-        try:
-            get_rose_password()
-            check_rose_credentials(user)
-        except Exception as e:
-            print(e)
-    except gpg.GPGError:
-        # Password not in GPG
+    except Exception as e:
+        warning('Subversion authentication failed.')
+        for arg in e.args:
+            info(arg)
         update(user)
-    except requests.exceptions.HTTPError:
-        # Testing authentication failed
+        return
+    # Check Rose password cache
+    if not rose_password_is_cached():
         update(user)
+        return
+    # Check Rose credentials, allowing failure
+    try:
+        check_rose_credentials(user)
+    except Exception as e:
+        info('Rose authentication failed.')
+        for arg in e.args:
+            info(arg)
+
+def start_gpg_agent():
+    """
+    Start the GPG agent if it has not already started
+    """
+    try:
+        gpg.start_gpg_agent()
+    except gpg.GPGError as e:
+        warning('GPGError in gpg.start_gpg_agent')
+        info(e.result)
+        raise AuthError
+    except Exception as e:
+        warning('Exception in gpg.start_gpg_agent')
+        for arg in e.args:
+            info(e)
+        raise AuthError
 
 def main():
     if on_accessdev():
@@ -205,18 +283,22 @@ def main():
     parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
     args = parser.parse_args()
 
+    # Start the GPG agent if it has not already started
     try:
-        gpg.send('GETINFO version')
-        gpg.set_environ()
+        start_gpg_agent()
+    except AuthError:
+        todo('Please contact the helpdesk.')
+    # Check or update the user's credentials
+    try:
         if args.force:
             update(user=None)
         else:
             check_or_update()
-
-    except requests.exceptions.HTTPError:
-        print("\nERROR: Please check your credentials, if you have recently reset your password it may take a bit of time for the server to recognise the new password")
     except Exception as e:
-        print(e)
+        for arg in e.args:
+            info(arg)
+        todo('Please check your credentials.'
+           + 'If you have recently reset your password it may take a bit of time for the server to recognise the new password.')
 
 if __name__ == '__main__':
     main()

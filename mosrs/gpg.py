@@ -32,7 +32,7 @@ def get_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    stdout = send("GET_PASSPHRASE --no-ask --data %s X X X\n"%cache_id)
+    stdout = send("GET_PASSPHRASE --no-ask --data {} X X X\n".format(cache_id))
     return unquote(stdout[0][2:])
 
 def clear_passphrase(cache_id):
@@ -41,7 +41,7 @@ def clear_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    send("CLEAR_PASSPHRASE %s\n"%cache_id)
+    send("CLEAR_PASSPHRASE {}\n".format(cache_id))
 
 def preset_passphrase(keygrip, passphrase):
     """
@@ -52,7 +52,7 @@ def preset_passphrase(keygrip, passphrase):
     # Only -1 is allowed for timeout
     timeout = -1
     assert(passphrase is not None)
-    send("PRESET_PASSPHRASE %s %s %s\n"%(keygrip, timeout, hexlify(passphrase)))
+    send("PRESET_PASSPHRASE {} {} {}\n".format(keygrip, timeout, hexlify(passphrase)))
 
 def send(message):
     """
@@ -60,13 +60,13 @@ def send(message):
     """
     agent = Popen(['gpg-connect-agent'],
             bufsize = 0,
-            stdout = PIPE,
             stdin  = PIPE,
+            stdout = PIPE,
+            stderr = PIPE
             )
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
-        message = "ERROR connecting to gpg-agent." 
-        raise Exception(message)
+        raise Exception("ERROR connecting to gpg-agent.")
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
 
@@ -91,14 +91,35 @@ def set_environ():
     """
     Setup the assumed environment variables GPG_TTY and GPG_AGENT_INFO
     """
-    process = Popen(['tty'],stdout=PIPE)
+    process = Popen(['tty'],
+              stdout = PIPE,
+              stderr = PIPE
+              )
     stdout, stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
         environ['GPG_TTY'] = stdout_line
-    process =  Popen(['gpgconf', '--list-dirs', 'agent-socket'],stdout=PIPE)
+    process = Popen(['gpgconf', '--list-dirs', 'agent-socket'],
+              stdout = PIPE,
+              stderr = PIPE
+              )
     stdout, stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
         environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
+
+def start_gpg_agent():
+    """
+    Make sure that the agent is running
+    """
+    message = 'GETINFO version'
+    try:
+        send(message)
+    except GPGError:
+        pass
+    except Exception as e:
+        for arg in e.args:
+            info(e)
+        raise GPGError(message, 'Exception in gpg.send')
+    set_environ()
 
