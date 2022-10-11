@@ -50,19 +50,18 @@ def prompt_or_default(prompt, default):
 def gpg_startup(gpg_environ):
     gpg_agent_script = dedent("""
     # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
-    function export_gpg_agent {
+    function export_gpg_environ {
         export GPG_TTY=$(tty)
         export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
     }
-    function check_gpg_agent {
+    function start_gpg_agent {
         mkdir -p $HOME/.gnupg
         gpg-connect-agent /bye
-        export_gpg_agent
+        export_gpg_environ
     }
     if in_interactive_shell; then
         if in_login_shell; then
-            # start the GPG agent
-            check_gpg_agent
+            start_gpg_agent
         fi
     fi
     # mosrs-setup gpg_agent_script: END
