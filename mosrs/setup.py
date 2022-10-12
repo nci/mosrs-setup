@@ -106,9 +106,12 @@ def gpg_startup():
             with open(p,'a') as startup_file:
                 startup_file.write(gpg_agent_script)
 
-    todo('GPG Agent has been added to your startup script. ' +
-         'Please log out of {} then back in again '.format(get_host()) +
-         'to make sure it has been activated.')
+    todo(dedent(
+        """
+        GPG Agent has been added to your startup script. Please log out of {}
+        then back in again to make sure it has been activated.
+        """.format(get_host())
+    ))
     raise SetupError
 
 def start_gpg_agent():
