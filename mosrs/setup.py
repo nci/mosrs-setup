@@ -21,10 +21,6 @@ from __future__ import print_function
 from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, rename, path
-from distutils.util import strtobool
-import ldap
-import getpass
-import socket
 
 from . import auth, gpg, host, message
 from host import get_host, on_accessdev
