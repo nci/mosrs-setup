@@ -47,7 +47,10 @@ def prompt_or_default(prompt, default):
         response = default
     return response
 
-def gpg_startup(gpg_environ):
+def gpg_startup():
+    """
+    Insert or append a GPG agent script into the user's startup script
+    """
     gpg_agent_script = dedent("""
     # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
     function export_gpg_environ {
@@ -80,16 +83,7 @@ def gpg_startup(gpg_environ):
                                 stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
-            if gpg_environ is not None:
-                return
-            else:
-                warning(
-                    'Startup script ~/{} contains gpg_agent_script but '.format(f) +
-                    'GPG environment variables are not defined.')
-                todo('Please log out of {} then back in again '.format(get_host()) +
-                     'to check that GPG environment variables are defined.')
-                todo('If that doesn\'t work please contact the helpdesk.')
-                raise SetupError
+            return
 
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
@@ -117,18 +111,6 @@ def gpg_startup(gpg_environ):
          'to make sure it has been activated.')
     raise SetupError
 
-def check_gpg_startup():
-    """
-    Check that GPG environment variables are defined
-    and add GPG agent to startup if needed.
-    """
-    gpg_environ = None
-    try:
-        gpg_environ = gpg.get_environ()
-    except KeyError:
-        pass
-    gpg_startup(gpg_environ)
-
 def start_gpg_agent():
     """
     Start the GPG agent if it has not already started
@@ -149,7 +131,6 @@ def setup_mosrs_account():
     """
     Setup MOSRS
     """
-    check_gpg_startup()
     start_gpg_agent()
     # Save account details and cache credentials
     mosrs_request = None
@@ -185,23 +166,25 @@ def main():
     if on_accessdev():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
-    print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
+    print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
     try:
         setup_mosrs_account()
-
-        # Account successfully created
-        print()
-        info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
-        print('    rosie go\n')
-        info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
-        print('    mosrs-auth\n')
+        # Insert or append a GPG agent script into the user's startup script
+        gpg_startup()
     except SetupError:
         todo('Once this has been done please run this setup script again.')
     except Exception as e:
         warning('Unexpected exception in mosrs-setup:')
         for arg in e.args:
             info(e)
+    else:
+        # Account successfully created
+        print()
+        info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
+        print('    rosie go\n')
+        info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
+        print('    mosrs-auth\n')
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
 
