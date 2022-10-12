@@ -21,6 +21,7 @@ from __future__ import print_function
 from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, rename, path
+from shutil import copy2
 
 from . import auth, gpg, host, message
 from host import get_host, on_accessdev
@@ -74,13 +75,16 @@ def gpg_startup():
         todo('Please contact the helpdesk.')
         raise SetupError
     else:
-        # Check if gpg-connect-agent is already referenced
+        # Check if gpg_agent_script is already referenced
         grep_gpg_agent_script = Popen(['grep','mosrs-setup gpg_agent_script',p],
                                 stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
             return
 
+        # Old filename and pathname used for rename or copy
+        old_f = f + '.old'
+        old_p = path.join(home,old_f)
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
         grep_boilerplate = Popen(['grep',boilerplate,p],
@@ -88,9 +92,8 @@ def gpg_startup():
         grep_boilerplate.communicate()
         if grep_boilerplate.returncode == 0:
             # Boilerplate has been found
-            old_f = f + '.old'
-            old_p = path.join(home,old_f)
             rename(p,old_p)
+            # Insert gpg_agent_script
             with open(old_p,'r') as old_startup_file:
                 old = old_startup_file.read()
                 insert_here = old.find(boilerplate)
@@ -98,7 +101,8 @@ def gpg_startup():
                 with open(p,'w') as startup_file:
                     startup_file.write(new)
         else:
-            # Append gpg_agent_script to file
+            copy2(p,old_p)
+            # Append gpg_agent_script
             with open(p,'a') as startup_file:
                 startup_file.write(gpg_agent_script)
 
