@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
         name     = 'mosrs',
-        version  = '0.5.6',
+        version  = '0.6.0',
         description = 'Cache credentials for NCI users of MOSRS',
         license = 'Apache License, Version 2.0',
         packages = find_packages(),
@@ -44,7 +44,6 @@ setup(
             'console_scripts': [
                 'mosrs-auth  = mosrs.auth:main',
                 'mosrs-setup = mosrs.setup:main',
-                'nciws-auth  = mosrs.nciws:main',
                 ]
             }
         )
