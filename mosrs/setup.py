@@ -22,6 +22,7 @@ from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, rename, path
 from shutil import copy2
+import ConfigParser
 
 from . import auth, gpg, host, message
 from host import get_host, on_accessdev
@@ -114,27 +115,18 @@ def gpg_startup():
     ))
     raise SetupError
 
-def start_gpg_agent():
-    """
-    Start the GPG agent if it has not already started
-    """
-    try:
-        gpg.start_gpg_agent()
-    except gpg.GPGError as e:
-        warning('GPGError in gpg.start_gpg_agent')
-        info(e.result)
-        raise SetupError
-    except Exception as e:
-        warning('Exception in gpg.start_gpg_agent')
-        for arg in e.args:
-            info(e)
-        raise SetupError
-
 def setup_mosrs_account():
     """
     Setup MOSRS
     """
-    start_gpg_agent()
+    try:
+        gpg.start_gpg_agent()
+    except gpg.GPGError as e:
+        warning('GPGError in setup_mosrs_account:')
+        for arg in e.args:
+            info(arg)
+        raise
+
     # Save account details and cache credentials
     mosrs_request = None
     while mosrs_request not in ['yes', 'no', 'y', 'n']:
@@ -143,10 +135,13 @@ def setup_mosrs_account():
     if mosrs_request.startswith('y'):
         try:
             auth.check_or_update()
-        except Exception as e:
+        except (gpg.GPGError, ConfigParser.Error):
+            warning('Authentication check and update failed.')
+            raise SetupError 
+        except auth.AuthError as e:
             warning('Authentication check and update failed.')
             for arg in e.args:
-                info(e)
+                info(arg)
             todo(dedent(
                 """
                 Please check your credentials. If you have recently reset your password
@@ -171,16 +166,19 @@ def main():
         return
 
     print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
+
     try:
-        setup_mosrs_account()
+        try:
+            setup_mosrs_account()
+        except gpg.GPGError:
+            return
+        except SetupError:
+            raise
+
         # Insert or append a GPG agent script into the user's startup script
         gpg_startup()
     except SetupError:
         todo('Once this has been done please run this setup script again.')
-    except Exception as e:
-        warning('Unexpected exception in mosrs-setup:')
-        for arg in e.args:
-            info(e)
     else:
         # Account successfully created
         print()
@@ -189,7 +187,7 @@ def main():
         info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
         print('    mosrs-auth\n')
     finally:
-        info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"\n')
+        info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"')
 
 if __name__ == '__main__':
     main()

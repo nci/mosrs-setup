@@ -66,7 +66,7 @@ def send(message):
             )
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
-        raise Exception("ERROR connecting to gpg-agent.")
+        raise GPGError('gpg.send:', 'Could not connect to gpg-agent.')
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
 
@@ -74,9 +74,10 @@ def _check_return(message,stdout):
     """
     Check status returned on last line
     """
+    #raise GPGError('gpg.check_return:', 'Dummy exception.')
     result = stdout.split('\n')[-2]
     if result != "OK":
-        raise GPGError(message,result)
+        raise GPGError('gpg.check_return:', result)
 
 def set_environ():
     """
@@ -103,14 +104,10 @@ def start_gpg_agent():
     """
     Make sure that the agent is running
     """
-    message = 'GETINFO version'
+    #raise GPGError('gpg.start_gpg_agent:', 'Dummy exception.')
     try:
-        send(message)
+        send('GETINFO version')
     except GPGError:
-        pass
-    except Exception as e:
-        for arg in e.args:
-            info(e)
-        raise GPGError(message, 'Exception in gpg.send')
+        raise
     set_environ()
 

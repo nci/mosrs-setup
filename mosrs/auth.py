@@ -20,6 +20,7 @@ from __future__ import print_function
 import os
 import argparse
 from getpass import getpass
+import ConfigParser
 from ConfigParser import SafeConfigParser
 from hashlib import md5
 from subprocess import Popen, PIPE
@@ -44,7 +45,7 @@ def get_rose_username():
         config = SafeConfigParser()
         config.read(svn_servers)
         return config.get('metofficesharedrepos','username')
-    except Exception:
+    except ConfigParser.Error:
         return None
 
 def save_rose_username(username):
@@ -95,12 +96,6 @@ def rose_password_is_cached():
         info('Rose password is not in cached.')
         update(user)
         return False
-    except Exception as e:
-        warning('Rose password retrieval failed.')
-        for arg in e.args:
-            info(arg)
-        update(user)
-        return False
     return True
 
 svn_prekey = '<https://code.metoffice.gov.uk:443> Met Office Code'
@@ -137,11 +132,6 @@ def svn_password_is_cached():
         # Password not in GPG
         info('Subversion password is not cached.')
         return False
-    except Exception as e:
-        warning('Subversion password retrieval failed.')
-        for arg in e.args:
-            info(arg)
-        return False
     return True
 
 def request_credentials(user=None):
@@ -166,13 +156,13 @@ def check_rose_credentials(user, prefix='u'):
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = 'Unable to access rosie prefix {} with your credentials.'.format(prefix)
+    unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
     if process.returncode != 0:
-        raise Exception(unable_message + stderr)
+        raise AuthError(unable_message, stderr)
     if 'Hello ' + user in stdout:
         info('Successfully accessed rosie with your credentials.')
     else:
-        raise Exception(unable_message + stdout)
+        raise AuthError(unable_message, stdout)
 
 def check_svn_credentials(url):
     """
@@ -186,13 +176,13 @@ def check_svn_credentials(url):
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = 'Unable to access {} via Subversion with your credentials.'.format(svn_url)
+    unable_message = 'Unable to access {} via Subversion with your credentials:'.format(svn_url)
     if process.returncode != 0:
-        raise Exception(unable_message + stderr)
+        raise AuthError(unable_message, stderr)
     if 'Path:' in stdout:
         info('Successfully accessed Subversion with your credentials.')
     else:
-        raise Exception(unable_message + stdout)
+        raise AuthError(unable_message, stdout)
 
 def update(user=None):
     """
@@ -203,10 +193,18 @@ def update(user=None):
     user, passwd = request_credentials(user)
     try:
         save_rose_username(user)
+    except ConfigParser.Error as e:
+        warning('Error in update when writing to Subversion config.')
+        for arg in e.args:
+            info(arg)
+        raise
+    try:
         save_rose_password(passwd)
         save_svn_password(passwd)
-    except Exception as e:
+    except gpg.GPGError as e:
         warning('Saving credentials failed in update.')
+        for arg in e.args:
+            info(arg)
         raise
     try:
         check_svn_credentials(svn_url)
@@ -222,9 +220,8 @@ def update(user=None):
     # Check Rose credentials separately, allowing failure
     try:
         check_rose_credentials(user)
-    except Exception as e:
+    except AuthError as e:
         warning('Rose authentication failed in update.')
-        print(type(e))
         for arg in e.args:
             info(arg)
 
@@ -240,7 +237,7 @@ def check_or_update():
     # Check Subversion credentials
     try:
         check_svn_credentials(svn_url)
-    except Exception as e:
+    except AuthError as e:
         warning('Subversion authentication failed.')
         for arg in e.args:
             info(arg)
@@ -253,7 +250,7 @@ def check_or_update():
     # Check Rose credentials, allowing failure
     try:
         check_rose_credentials(user)
-    except Exception as e:
+    except AuthError as e:
         info('Rose authentication failed.')
         for arg in e.args:
             info(arg)
@@ -265,13 +262,9 @@ def start_gpg_agent():
     try:
         gpg.start_gpg_agent()
     except gpg.GPGError as e:
-        warning('GPGError in gpg.start_gpg_agent')
-        info(e.result)
-        raise AuthError
-    except Exception as e:
-        warning('Exception in gpg.start_gpg_agent')
+        warning('GPGError in start_gpg_agent:')
         for arg in e.args:
-            info(e)
+            info(arg)
         raise AuthError
 
 def main():
@@ -288,13 +281,17 @@ def main():
         start_gpg_agent()
     except AuthError:
         todo('Please contact the helpdesk.')
+        return
+
     # Check or update the user's credentials
     try:
         if args.force:
             update(user=None)
         else:
             check_or_update()
-    except Exception as e:
+    except (gpg.GPGError, ConfigParser.Error):
+        pass
+    except AuthError as e:
         for arg in e.args:
             info(arg)
         todo('Please check your credentials.'

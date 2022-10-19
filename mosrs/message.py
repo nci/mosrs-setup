@@ -18,6 +18,9 @@ limitations under the License.
 
 from __future__ import print_function
 
+class MessageError(Exception):
+    pass
+
 def colour(text, colour):
     if colour == 'red':
         code = '\033[91m'
@@ -26,7 +29,7 @@ def colour(text, colour):
     elif colour == 'blue':
         code = '\033[94m'
     else:
-        raise Exception
+        raise MSGError(colour)
     reset = '\033[m'
     return code + text + reset
 
