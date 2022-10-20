@@ -24,6 +24,9 @@ from os import environ
 
 
 class GPGError(Exception):
+    """
+    Indicates an anticipated error
+    """
     pass
 
 def get_passphrase(cache_id):
@@ -66,7 +69,7 @@ def send(message):
             )
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
-        raise Exception("ERROR connecting to gpg-agent.")
+        raise GPGError('gpg.send:', 'Could not connect to gpg-agent.')
     _check_return(message,stdout)
     return stdout.split('\n')[0:-2]
 
@@ -76,7 +79,7 @@ def _check_return(message,stdout):
     """
     result = stdout.split('\n')[-2]
     if result != "OK":
-        raise GPGError(message,result)
+        raise GPGError('gpg.check_return:', result)
 
 def set_environ():
     """
@@ -103,14 +106,6 @@ def start_gpg_agent():
     """
     Make sure that the agent is running
     """
-    message = 'GETINFO version'
-    try:
-        send(message)
-    except GPGError:
-        pass
-    except Exception as e:
-        for arg in e.args:
-            info(e)
-        raise GPGError(message, 'Exception in gpg.send')
+    send('GETINFO version')
     set_environ()
 
