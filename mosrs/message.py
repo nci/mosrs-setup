@@ -29,7 +29,7 @@ def colour(text, colour):
     elif colour == 'blue':
         code = '\033[94m'
     else:
-        raise MSGError(colour)
+        raise MessageError('Unimplemented colour:', colour)
     reset = '\033[m'
     return code + text + reset
 
