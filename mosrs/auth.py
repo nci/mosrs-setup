@@ -31,7 +31,7 @@ from message import info, warning, todo
 
 class AuthError(Exception):
     """
-    Indicates an anticipated but unrecoverable error
+    Indicates an anticipated error
     """
     pass
 
@@ -46,6 +46,7 @@ def get_rose_username():
         config.read(svn_servers)
         return config.get('metofficesharedrepos','username')
     except ConfigParser.Error:
+        info('Unable to retrieve your MOSRS username.')
         return None
 
 def save_rose_username(username):
@@ -93,8 +94,7 @@ def rose_password_is_cached():
         get_rose_password()
     except gpg.GPGError as e:
         # Password not in GPG
-        info('Rose password is not in cached.')
-        update(user)
+        info('Rose password is not cached.')
         return False
     return True
 
@@ -191,26 +191,21 @@ def update(user=None):
 
     # Ask for credentials
     user, passwd = request_credentials(user)
-    try:
-        save_rose_username(user)
-    except ConfigParser.Error as e:
-        warning('Error in update when writing to Subversion config.')
-        for arg in e.args:
-            info(arg)
-        raise
+    save_rose_username(user)
     try:
         save_rose_password(passwd)
         save_svn_password(passwd)
     except gpg.GPGError as e:
-        warning('Saving credentials failed in update.')
+        warning('Saving credentials failed:')
         for arg in e.args:
             info(arg)
-        raise
+        raise AuthError
+    # Check Subversion credentials
     try:
         check_svn_credentials(svn_url)
-    except:
+    except AuthError:
         # Clear the user and try one more time
-        warning('Subversion authentication failed in update.')
+        warning('Subversion authentication failed.')
         user = None
         user, passwd = request_credentials(user)
         save_rose_username(user)
@@ -221,7 +216,7 @@ def update(user=None):
     try:
         check_rose_credentials(user)
     except AuthError as e:
-        warning('Rose authentication failed in update.')
+        warning('Rose authentication failed:')
         for arg in e.args:
             info(arg)
 
@@ -238,7 +233,7 @@ def check_or_update():
     try:
         check_svn_credentials(svn_url)
     except AuthError as e:
-        warning('Subversion authentication failed.')
+        warning('Subversion authentication with cached credentials failed:')
         for arg in e.args:
             info(arg)
         update(user)
@@ -251,7 +246,7 @@ def check_or_update():
     try:
         check_rose_credentials(user)
     except AuthError as e:
-        info('Rose authentication failed.')
+        info('Rose authentication with cached credentials failed:')
         for arg in e.args:
             info(arg)
 
@@ -289,11 +284,7 @@ def main():
             update(user=None)
         else:
             check_or_update()
-    except (gpg.GPGError, ConfigParser.Error):
-        pass
-    except AuthError as e:
-        for arg in e.args:
-            info(arg)
+    except AuthError:
         todo('Please check your credentials.'
            + 'If you have recently reset your password it may take a bit of time for the server to recognise the new password.')
 

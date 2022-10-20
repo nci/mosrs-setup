@@ -22,7 +22,6 @@ from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, rename, path
 from shutil import copy2
-import ConfigParser
 
 from . import auth, gpg, host, message
 from host import get_host, on_accessdev
@@ -135,13 +134,8 @@ def setup_mosrs_account():
     if mosrs_request.startswith('y'):
         try:
             auth.check_or_update()
-        except (gpg.GPGError, ConfigParser.Error):
+        except auth.AuthError:
             warning('Authentication check and update failed.')
-            raise SetupError 
-        except auth.AuthError as e:
-            warning('Authentication check and update failed.')
-            for arg in e.args:
-                info(arg)
             todo(dedent(
                 """
                 Please check your credentials. If you have recently reset your password

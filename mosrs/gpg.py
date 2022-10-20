@@ -24,6 +24,9 @@ from os import environ
 
 
 class GPGError(Exception):
+    """
+    Indicates an anticipated error
+    """
     pass
 
 def get_passphrase(cache_id):
@@ -74,7 +77,6 @@ def _check_return(message,stdout):
     """
     Check status returned on last line
     """
-    #raise GPGError('gpg.check_return:', 'Dummy exception.')
     result = stdout.split('\n')[-2]
     if result != "OK":
         raise GPGError('gpg.check_return:', result)
@@ -104,10 +106,6 @@ def start_gpg_agent():
     """
     Make sure that the agent is running
     """
-    #raise GPGError('gpg.start_gpg_agent:', 'Dummy exception.')
-    try:
-        send('GETINFO version')
-    except GPGError:
-        raise
+    send('GETINFO version')
     set_environ()
 
