@@ -18,6 +18,7 @@ limitations under the License.
 """
 
 from __future__ import print_function
+import argparse
 from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, rename, path
@@ -158,6 +159,9 @@ def main():
     if on_accessdev():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
+
+    parser = argparse.ArgumentParser(description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
+    args = parser.parse_args()
 
     print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 

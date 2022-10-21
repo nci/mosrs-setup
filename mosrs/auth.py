@@ -24,6 +24,7 @@ import ConfigParser
 from ConfigParser import SafeConfigParser
 from hashlib import md5
 from subprocess import Popen, PIPE
+from textwrap import dedent
 
 from . import gpg, host
 from host import on_accessdev
@@ -285,8 +286,12 @@ def main():
         else:
             check_or_update()
     except AuthError:
-        todo('Please check your credentials.'
-           + 'If you have recently reset your password it may take a bit of time for the server to recognise the new password.')
+        todo(dedent(
+            """
+            Please check your credentials.
+            If you have recently reset your password it may take a bit of time for the server to recognise the new password.
+            """
+        ))
 
 if __name__ == '__main__':
     main()
