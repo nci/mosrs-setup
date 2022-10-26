@@ -28,8 +28,7 @@ def get_host():
             return name
     for name in [
             "gadi-analysis",
-            "gadi-dm",
-            ]:
+            "gadi-dm"]:
         if name in hostname:
             return "ARE"
     return "unsupported"
