@@ -39,4 +39,3 @@ def warning(text):
     print('{}: {}'.format(colour('WARN', 'red'), text))
 def todo(text):
     print('{}: {}'.format(colour('TODO', 'green'), text))
-    
