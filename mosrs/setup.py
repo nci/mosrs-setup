@@ -77,8 +77,9 @@ def gpg_startup():
         raise SetupError
     else:
         # Check if gpg_agent_script is already referenced
-        grep_gpg_agent_script = Popen(['grep', 'mosrs-setup gpg_agent_script', p],
-                                stdout=PIPE)
+        grep_gpg_agent_script = Popen(
+            ['grep', 'mosrs-setup gpg_agent_script', p],
+            stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
             return
@@ -88,8 +89,9 @@ def gpg_startup():
         old_p = path.join(home, old_f)
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
-        grep_boilerplate = Popen(['grep', boilerplate, p],
-                           stdout=PIPE)
+        grep_boilerplate = Popen(
+            ['grep', boilerplate, p],
+            stdout=PIPE)
         grep_boilerplate.communicate()
         if grep_boilerplate.returncode == 0:
             # Boilerplate has been found

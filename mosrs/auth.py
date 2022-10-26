@@ -151,9 +151,9 @@ def check_rose_credentials(user, prefix='u'):
     """
     command = ['rosie', 'hello', '--prefix=' + prefix]
     process = Popen(
-            command,
-            stdout=PIPE,
-            stderr=PIPE)
+        command,
+        stdout=PIPE,
+        stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
@@ -171,9 +171,9 @@ def check_svn_credentials(url):
     """
     command = ['svn', 'info', '--non-interactive', svn_url]
     process = Popen(
-            command,
-            stdout=PIPE,
-            stderr=PIPE)
+        command,
+        stdout=PIPE,
+        stderr=PIPE)
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
