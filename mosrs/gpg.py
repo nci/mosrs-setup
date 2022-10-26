@@ -108,4 +108,3 @@ def start_gpg_agent():
     """
     send('GETINFO version')
     set_environ()
-

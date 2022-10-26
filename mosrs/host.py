@@ -36,4 +36,3 @@ def get_host():
 def on_accessdev():
     hostname = get_host()
     return hostname == "accessdev"
-
