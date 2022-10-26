@@ -63,10 +63,10 @@ def send(message):
     """
     agent = Popen(
         ['gpg-connect-agent'],
-        bufsize = 0,
-        stdin  = PIPE,
-        stdout = PIPE,
-        stderr = PIPE)
+        bufsize=0,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE)
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
         raise GPGError('gpg.send:', 'Could not connect to gpg-agent.')
@@ -87,16 +87,16 @@ def set_environ():
     """
     process = Popen(
         ['tty'],
-        stdout = PIPE,
-        stderr = PIPE)
+        stdout=PIPE,
+        stderr=PIPE)
     stdout, stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
         environ['GPG_TTY'] = stdout_line
     process = Popen(
         ['gpgconf', '--list-dirs', 'agent-socket'],
-        stdout = PIPE,
-        stderr = PIPE)
+        stdout=PIPE,
+        stderr=PIPE)
     stdout, stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
