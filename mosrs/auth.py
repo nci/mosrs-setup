@@ -36,7 +36,7 @@ class AuthError(Exception):
     """
     pass
 
-svn_servers = os.path.join(os.environ['HOME'],'.subversion/servers')
+svn_servers = os.path.join(os.environ['HOME'], '.subversion/servers')
 
 def get_rose_username():
     """
@@ -45,7 +45,7 @@ def get_rose_username():
     try:
         config = SafeConfigParser()
         config.read(svn_servers)
-        return config.get('metofficesharedrepos','username')
+        return config.get('metofficesharedrepos', 'username')
     except ConfigParser.Error:
         info('Unable to retrieve your MOSRS username.')
         return None
@@ -55,7 +55,7 @@ def save_rose_username(username):
     Add the Rose username & server settings to Subversion's config file
     """
     # Run 'svn help' to create the config files if they don't exist
-    process = Popen(['svn','help'],stdout=PIPE)
+    process = Popen(['svn', 'help'], stdout=PIPE)
     process.communicate()
 
     config = SafeConfigParser()
@@ -63,12 +63,12 @@ def save_rose_username(username):
 
     if not config.has_section('groups'):
         config.add_section('groups')
-    config.set('groups','metofficesharedrepos','code*.metoffice.gov.uk')
+    config.set('groups', 'metofficesharedrepos', 'code*.metoffice.gov.uk')
 
     if not config.has_section('metofficesharedrepos'):
         config.add_section('metofficesharedrepos')
-    config.set('metofficesharedrepos','username',username)
-    config.set('metofficesharedrepos','store-plaintext-passwords','no')
+    config.set('metofficesharedrepos', 'username', username)
+    config.set('metofficesharedrepos', 'store-plaintext-passwords', 'no')
 
     with open(svn_servers, 'w') as f:
         config.write(f)
@@ -79,7 +79,7 @@ def save_rose_password(passwd):
     """
     Store the Rose password in GPG agent
     """
-    gpg.preset_passphrase(rose_key,passwd)
+    gpg.preset_passphrase(rose_key, passwd)
 
 def get_rose_password():
     """
@@ -114,7 +114,7 @@ def save_svn_password(passwd):
     Store the Subversion password in GPG agent
     """
     key = get_svn_key()
-    gpg.preset_passphrase(key,passwd)
+    gpg.preset_passphrase(key, passwd)
 
 def get_svn_password():
     """
@@ -269,7 +269,7 @@ def main():
         return
 
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
-    parser.add_argument('--force',dest='force',action='store_true',help='force cache refresh of both username and password')
+    parser.add_argument('--force', dest='force', action='store_true', help='force cache refresh of both username and password')
     args = parser.parse_args()
 
     # Start the GPG agent if it has not already started

@@ -40,7 +40,7 @@ def prompt_or_default(prompt, default):
 
     Returns: answer or default
     """
-    response = raw_input('{} [{}]: '.format(prompt,default)).strip()
+    response = raw_input('{} [{}]: '.format(prompt, default)).strip()
     if response == '':
         response = default
     return response
@@ -70,14 +70,14 @@ def gpg_startup():
     """)
     home = environ['HOME']
     f = '.bashrc'
-    p = path.join(home,f)
+    p = path.join(home, f)
     if not path.exists(p):
         warning('Startup script ~/{} does not exist'.format(f))
         todo('Please contact the helpdesk.')
         raise SetupError
     else:
         # Check if gpg_agent_script is already referenced
-        grep_gpg_agent_script = Popen(['grep','mosrs-setup gpg_agent_script',p],
+        grep_gpg_agent_script = Popen(['grep', 'mosrs-setup gpg_agent_script', p],
                                 stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
@@ -85,26 +85,26 @@ def gpg_startup():
 
         # Old filename and pathname used for rename or copy
         old_f = f + '.old'
-        old_p = path.join(home,old_f)
+        old_p = path.join(home, old_f)
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
-        grep_boilerplate = Popen(['grep',boilerplate,p],
+        grep_boilerplate = Popen(['grep', boilerplate, p],
                            stdout=PIPE)
         grep_boilerplate.communicate()
         if grep_boilerplate.returncode == 0:
             # Boilerplate has been found
-            rename(p,old_p)
+            rename(p, old_p)
             # Insert gpg_agent_script
-            with open(old_p,'r') as old_startup_file:
+            with open(old_p, 'r') as old_startup_file:
                 old = old_startup_file.read()
                 insert_here = old.find(boilerplate)
                 new = old[:insert_here] + gpg_agent_script + old[insert_here:]
-                with open(p,'w') as startup_file:
+                with open(p, 'w') as startup_file:
                     startup_file.write(new)
         else:
-            copy2(p,old_p)
+            copy2(p, old_p)
             # Append gpg_agent_script
-            with open(p,'a') as startup_file:
+            with open(p, 'a') as startup_file:
                 startup_file.write(gpg_agent_script)
 
     todo(dedent(

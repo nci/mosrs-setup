@@ -70,10 +70,10 @@ def send(message):
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
         raise GPGError('gpg.send:', 'Could not connect to gpg-agent.')
-    _check_return(message,stdout)
+    _check_return(message, stdout)
     return stdout.split('\n')[0:-2]
 
-def _check_return(message,stdout):
+def _check_return(message, stdout):
     """
     Check status returned on last line
     """
