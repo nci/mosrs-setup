@@ -54,7 +54,7 @@ def preset_passphrase(keygrip, passphrase):
     """
     # Only -1 is allowed for timeout
     timeout = -1
-    assert(passphrase is not None)
+    assert passphrase is not None
     send("PRESET_PASSPHRASE {} {} {}\n".format(keygrip, timeout, hexlify(passphrase)))
 
 def send(message):
