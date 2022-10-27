@@ -157,6 +157,9 @@ def setup_mosrs_account():
         raise SetupError
 
 def main():
+    """
+    The mosrs-setup console script
+    """
     print()
     if on_accessdev():
         warning('This version of mosrs-setup is not intended to run on accessdev.')

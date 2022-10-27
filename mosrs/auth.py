@@ -222,6 +222,10 @@ def update(user=None):
             info(arg)
 
 def check_or_update():
+    """
+    Check that credentials are cached and work, 
+    otherwise call update to obtain new credentials
+    """
     user = get_rose_username()
     if user is None:
         update()
@@ -264,6 +268,9 @@ def start_gpg_agent():
         raise AuthError
 
 def main():
+    """
+    The mosrs-auth console script
+    """
     if on_accessdev():
         warning('This version of mosrs-auth is not intended to run on accessdev.')
         return
