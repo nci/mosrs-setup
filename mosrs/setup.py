@@ -114,7 +114,7 @@ def gpg_startup():
         GPG Agent has been added to your startup script. Please log out of {}
         then back in again to make sure it has been activated.
         """.format(get_host())
-    ))
+        ))
     raise SetupError
 
 def setup_mosrs_account():
@@ -143,8 +143,7 @@ def setup_mosrs_account():
                 """
                 Please check your credentials. If you have recently reset your password
                 it may take a bit of time for the server to recognise the new password.
-                """
-            ))
+                """))
             raise SetupError
     else:
         todo(dedent(
@@ -152,8 +151,7 @@ def setup_mosrs_account():
             Please send a request for a MOSRS account to your MOSRS Group Sponsor,
             copying in the Lead Chief Investigator of your NCI project.
             See https://my.nci.org.au for information on your project.
-            """
-        ))
+            """))
         raise SetupError
 
 def main():
@@ -165,10 +163,12 @@ def main():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
 
-    parser = argparse.ArgumentParser(description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
+    parser = argparse.ArgumentParser(
+        description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
     args = parser.parse_args()
 
-    print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
+    print(
+        'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
         try:
@@ -185,9 +185,17 @@ def main():
     else:
         # Account successfully created
         print()
-        info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
+        info(dedent(
+            """
+            You are now able to use Rose and the MOSRS Subversion repositories.
+            To see a list of available experiments run:
+            """))
         print('    rosie go\n')
-        info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
+        info(dedent(
+            """
+            Your password will be cached for a maximum of 12 hours.
+            To store your password again run:
+            """))
         print('    mosrs-auth\n')
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"')

@@ -223,7 +223,7 @@ def update(user=None):
 
 def check_or_update():
     """
-    Check that credentials are cached and work, 
+    Check that credentials are cached and work,
     otherwise call update to obtain new credentials
     """
     user = get_rose_username()
@@ -276,7 +276,11 @@ def main():
         return
 
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
-    parser.add_argument('--force', dest='force', action='store_true', help='force cache refresh of both username and password')
+    parser.add_argument(
+        '--force',
+        dest='force',
+        action='store_true',
+        help='force cache refresh of both username and password')
     args = parser.parse_args()
 
     # Start the GPG agent if it has not already started
@@ -295,10 +299,9 @@ def main():
     except AuthError:
         todo(dedent(
             """
-            Please check your credentials.
-            If you have recently reset your password it may take a bit of time for the server to recognise the new password.
-            """
-        ))
+            Please check your credentials. If you have recently reset your password
+            it may take a bit of time for the server to recognise the new password.
+            """))
 
 if __name__ == '__main__':
     main()
