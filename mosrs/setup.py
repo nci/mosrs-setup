@@ -184,19 +184,18 @@ def main():
         todo('Once this has been done please run this setup script again.')
     else:
         # Account successfully created
-        print()
         info(dedent(
             """
             You are now able to use Rose and the MOSRS Subversion repositories.
             To see a list of available experiments run:
-            """))
-        print('    rosie go\n')
-        info(dedent(
-            """
+
+                rosie go
+
             Your password will be cached for a maximum of 12 hours.
             To store your password again run:
+
+                mosrs-auth
             """))
-        print('    mosrs-auth\n')
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"')
 
