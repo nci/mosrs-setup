@@ -24,9 +24,9 @@ from textwrap import dedent
 from os import environ, rename, path
 from shutil import copy2
 
-from . import auth, gpg, host, message
-from host import get_host, on_accessdev
-from message import info, warning, todo
+from mosrs.host import get_host, on_accessdev
+from mosrs.message import info, warning, todo
+from . import auth, gpg
 
 class SetupError(Exception):
     """

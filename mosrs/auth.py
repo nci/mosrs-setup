@@ -26,9 +26,9 @@ from hashlib import md5
 from subprocess import Popen, PIPE
 from textwrap import dedent
 
-from . import gpg, host
-from host import on_accessdev
-from message import info, warning, todo
+from mosrs.host import on_accessdev
+from mosrs.message import info, warning, todo
+from . import gpg
 
 class AuthError(Exception):
     """
