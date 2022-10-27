@@ -69,11 +69,13 @@ def send(message):
         stderr=PIPE)
     stdout, stderr = agent.communicate(message)
     if agent.returncode != 0:
-        raise GPGError('gpg.send:', 'Could not connect to gpg-agent.')
-    _check_return(message, stdout)
+        raise GPGError(
+            'gpg.send:',
+            'Could not connect to gpg-agent:\n{}'.format(stderr))
+    check_return(stdout)
     return stdout.split('\n')[0:-2]
 
-def _check_return(message, stdout):
+def check_return(stdout):
     """
     Check status returned on last line
     """
@@ -89,7 +91,7 @@ def set_environ():
         ['tty'],
         stdout=PIPE,
         stderr=PIPE)
-    stdout, stderr = process.communicate()
+    stdout, _stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
         environ['GPG_TTY'] = stdout_line
@@ -97,7 +99,7 @@ def set_environ():
         ['gpgconf', '--list-dirs', 'agent-socket'],
         stdout=PIPE,
         stderr=PIPE)
-    stdout, stderr = process.communicate()
+    stdout, _stderr = process.communicate()
     if process.returncode == 0:
         stdout_line = stdout.splitlines()[0]
         environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'

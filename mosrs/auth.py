@@ -93,7 +93,7 @@ def rose_password_is_cached():
     """
     try:
         get_rose_password()
-    except gpg.GPGError as e:
+    except gpg.GPGError:
         # Password not in GPG
         info('Rose password is not cached.')
         return False
@@ -129,7 +129,7 @@ def svn_password_is_cached():
     """
     try:
         get_svn_password()
-    except gpg.GPGError as e:
+    except gpg.GPGError:
         # Password not in GPG
         info('Subversion password is not cached.')
         return False
@@ -169,7 +169,7 @@ def check_svn_credentials(url):
     """
     Try subversion info with url to make sure that the cached password is working
     """
-    command = ['svn', 'info', '--non-interactive', svn_url]
+    command = ['svn', 'info', '--non-interactive', url]
     process = Popen(
         command,
         stdout=PIPE,
@@ -177,7 +177,7 @@ def check_svn_credentials(url):
     stdout, stderr = process.communicate()
     stdout = '' if stdout is None else stdout
     stderr = '' if stderr is None else stderr
-    unable_message = 'Unable to access {} via Subversion with your credentials:'.format(svn_url)
+    unable_message = 'Unable to access {} via Subversion with your credentials:'.format(url)
     if process.returncode != 0:
         raise AuthError(unable_message, stderr)
     if 'Path:' in stdout:

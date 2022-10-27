@@ -165,7 +165,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
-    args = parser.parse_args()
+    parser.parse_args()
 
     print(
         'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
