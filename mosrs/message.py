@@ -24,15 +24,15 @@ class MessageError(Exception):
     """
     pass
 
-def colour(text, colour):
+def colour(text, colour_name):
     """
     Return the ANSI colour escape sequence for a named colour
     """
-    if colour == 'red':
+    if colour_name == 'red':
         code = '\033[91m'
-    elif colour == 'green':
+    elif colour_name == 'green':
         code = '\033[32m'
-    elif colour == 'blue':
+    elif colour_name == 'blue':
         code = '\033[94m'
     else:
         raise MessageError('Unimplemented colour:', colour)
