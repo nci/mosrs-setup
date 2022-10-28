@@ -19,14 +19,20 @@ limitations under the License.
 from __future__ import print_function
 
 class MessageError(Exception):
+    """
+    Indicates an anticipated error
+    """
     pass
 
-def colour(text, colour):
-    if colour == 'red':
+def colour(text, colour_name):
+    """
+    Return the ANSI colour escape sequence for a named colour
+    """
+    if colour_name == 'red':
         code = '\033[91m'
-    elif colour == 'green':
+    elif colour_name == 'green':
         code = '\033[32m'
-    elif colour == 'blue':
+    elif colour_name == 'blue':
         code = '\033[94m'
     else:
         raise MessageError('Unimplemented colour:', colour)
@@ -34,9 +40,17 @@ def colour(text, colour):
     return code + text + reset
 
 def info(text):
-    print('{}: {}'.format(colour('INFO','blue'),text))
+    """
+    Print an information message
+    """
+    print('{}: {}'.format(colour('INFO', 'blue'), text))
 def warning(text):
-    print('{}: {}'.format(colour('WARN','red'),text))
+    """
+    Print a warning message
+    """
+    print('{}: {}'.format(colour('WARN', 'red'), text))
 def todo(text):
-    print('{}: {}'.format(colour('TODO','green'),text))
-    
+    """
+    Print a todo message
+    """
+    print('{}: {}'.format(colour('TODO', 'green'), text))

@@ -24,9 +24,9 @@ from textwrap import dedent
 from os import environ, rename, path
 from shutil import copy2
 
-from . import auth, gpg, host, message
-from host import get_host, on_accessdev
-from message import info, warning, todo
+from mosrs.host import get_host, on_accessdev
+from mosrs.message import info, warning, todo
+from . import auth, gpg
 
 class SetupError(Exception):
     """
@@ -40,7 +40,7 @@ def prompt_or_default(prompt, default):
 
     Returns: answer or default
     """
-    response = raw_input('{} [{}]: '.format(prompt,default)).strip()
+    response = raw_input('{} [{}]: '.format(prompt, default)).strip()
     if response == '':
         response = default
     return response
@@ -56,7 +56,7 @@ def gpg_startup():
         export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
     }
     function start_gpg_agent {
-        mkdir -p $HOME/.gnupg
+        mkdir -startup_path $HOME/.gnupg
         gpg-connect-agent /bye
         export_gpg_environ
     }
@@ -69,42 +69,44 @@ def gpg_startup():
 
     """)
     home = environ['HOME']
-    f = '.bashrc'
-    p = path.join(home,f)
-    if not path.exists(p):
-        warning('Startup script ~/{} does not exist'.format(f))
+    startup_name = '.bashrc'
+    startup_path = path.join(home, startup_name)
+    if not path.exists(startup_path):
+        warning('Startup script ~/{} does not exist'.format(startup_name))
         todo('Please contact the helpdesk.')
         raise SetupError
     else:
         # Check if gpg_agent_script is already referenced
-        grep_gpg_agent_script = Popen(['grep','mosrs-setup gpg_agent_script',p],
-                                stdout=PIPE)
+        grep_gpg_agent_script = Popen(
+            ['grep', 'mosrs-setup gpg_agent_script', startup_path],
+            stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
             return
 
         # Old filename and pathname used for rename or copy
-        old_f = f + '.old'
-        old_p = path.join(home,old_f)
+        old_name = startup_name + '.old'
+        old_path = path.join(home, old_name)
         # Look for NCI boilerplate in startup file
         boilerplate = 'if in_interactive_shell; then'
-        grep_boilerplate = Popen(['grep',boilerplate,p],
-                           stdout=PIPE)
+        grep_boilerplate = Popen(
+            ['grep', boilerplate, startup_path],
+            stdout=PIPE)
         grep_boilerplate.communicate()
         if grep_boilerplate.returncode == 0:
             # Boilerplate has been found
-            rename(p,old_p)
+            rename(startup_path, old_path)
             # Insert gpg_agent_script
-            with open(old_p,'r') as old_startup_file:
+            with open(old_path, 'r') as old_startup_file:
                 old = old_startup_file.read()
                 insert_here = old.find(boilerplate)
                 new = old[:insert_here] + gpg_agent_script + old[insert_here:]
-                with open(p,'w') as startup_file:
+                with open(startup_path, 'w') as startup_file:
                     startup_file.write(new)
         else:
-            copy2(p,old_p)
+            copy2(startup_path, old_path)
             # Append gpg_agent_script
-            with open(p,'a') as startup_file:
+            with open(startup_path, 'a') as startup_file:
                 startup_file.write(gpg_agent_script)
 
     todo(dedent(
@@ -112,7 +114,7 @@ def gpg_startup():
         GPG Agent has been added to your startup script. Please log out of {}
         then back in again to make sure it has been activated.
         """.format(get_host())
-    ))
+        ))
     raise SetupError
 
 def setup_mosrs_account():
@@ -121,9 +123,9 @@ def setup_mosrs_account():
     """
     try:
         gpg.start_gpg_agent()
-    except gpg.GPGError as e:
+    except gpg.GPGError as exc:
         warning('GPGError in setup_mosrs_account:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
         raise
 
@@ -141,8 +143,7 @@ def setup_mosrs_account():
                 """
                 Please check your credentials. If you have recently reset your password
                 it may take a bit of time for the server to recognise the new password.
-                """
-            ))
+                """))
             raise SetupError
     else:
         todo(dedent(
@@ -150,20 +151,24 @@ def setup_mosrs_account():
             Please send a request for a MOSRS account to your MOSRS Group Sponsor,
             copying in the Lead Chief Investigator of your NCI project.
             See https://my.nci.org.au for information on your project.
-            """
-        ))
+            """))
         raise SetupError
 
 def main():
+    """
+    The mosrs-setup console script
+    """
     print()
     if on_accessdev():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
 
-    parser = argparse.ArgumentParser(description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
+    parser.parse_args()
 
-    print('This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
+    print(
+        'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
         try:
@@ -179,11 +184,18 @@ def main():
         todo('Once this has been done please run this setup script again.')
     else:
         # Account successfully created
-        print()
-        info('You are now able to use Rose and the MOSRS Subversion repositories. To see a list of available experiments run:')
-        print('    rosie go\n')
-        info('Your password will be cached for a maximum of 12 hours. To store your password again run:')
-        print('    mosrs-auth\n')
+        info(dedent(
+            """
+            You are now able to use Rose and the MOSRS Subversion repositories.
+            To see a list of available experiments run:
+
+                rosie go
+
+            Your password will be cached for a maximum of 12 hours.
+            To store your password again run:
+
+                mosrs-auth
+            """))
     finally:
         info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"')
 

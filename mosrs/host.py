@@ -19,6 +19,9 @@ limitations under the License.
 import socket
 
 def get_host():
+    """
+    Determine the host name, with ARE as a special case
+    """
     hostname = socket.gethostname()
     for name in [
             "accessdev",
@@ -28,13 +31,14 @@ def get_host():
             return name
     for name in [
             "gadi-analysis",
-            "gadi-dm",
-            ]:
+            "gadi-dm"]:
         if name in hostname:
             return "ARE"
     return "unsupported"
 
 def on_accessdev():
+    """
+    Boolean function returns True if the host is accessdev
+    """
     hostname = get_host()
     return hostname == "accessdev"
-
