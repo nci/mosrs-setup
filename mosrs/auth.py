@@ -27,8 +27,8 @@ from subprocess import Popen, PIPE
 from textwrap import dedent
 
 from mosrs.host import on_accessdev
-from mosrs.message import info, warning, todo
-from . import gpg
+from mosrs.message import debug, info, warning, todo
+from . import gpg, message
 
 class AuthError(Exception):
     """
@@ -47,7 +47,7 @@ def get_rose_username():
         config.read(SVN_SERVERS)
         return config.get('metofficesharedrepos', 'username')
     except ConfigParser.Error:
-        info('Unable to retrieve your MOSRS username.')
+        debug('Unable to retrieve your MOSRS username.')
         return None
 
 def save_rose_username(username):
@@ -95,7 +95,7 @@ def rose_password_is_cached():
         get_rose_password()
     except gpg.GPGError:
         # Password not in GPG
-        info('Rose password is not cached.')
+        debug('Rose password is not cached.')
         return False
     return True
 
@@ -131,7 +131,7 @@ def svn_password_is_cached():
         get_svn_password()
     except gpg.GPGError:
         # Password not in GPG
-        info('Subversion password is not cached.')
+        debug('Subversion password is not cached.')
         return False
     return True
 
@@ -197,9 +197,9 @@ def update(user=None):
         save_rose_password(passwd)
         save_svn_password(passwd)
     except gpg.GPGError as exc:
-        warning('Saving credentials failed:')
+        warning('Saving credentials failed.')
         for arg in exc.args:
-            info(arg)
+            debug(arg)
         raise AuthError
     # Check Subversion credentials
     try:
@@ -217,7 +217,7 @@ def update(user=None):
     try:
         check_rose_credentials(user)
     except AuthError as exc:
-        warning('Rose authentication failed:')
+        warning('Rose authentication failed.')
         for arg in exc.args:
             info(arg)
 
@@ -238,7 +238,7 @@ def check_or_update():
     try:
         check_svn_credentials(SVN_URL)
     except AuthError as exc:
-        warning('Subversion authentication with cached credentials failed:')
+        warning('Subversion authentication with cached credentials failed.')
         for arg in exc.args:
             info(arg)
         update(user)
@@ -251,7 +251,7 @@ def check_or_update():
     try:
         check_rose_credentials(user)
     except AuthError as exc:
-        info('Rose authentication with cached credentials failed:')
+        info('Rose authentication with cached credentials failed.')
         for arg in exc.args:
             info(arg)
 
@@ -277,11 +277,19 @@ def main():
 
     parser = argparse.ArgumentParser(description="Cache password to MOSRS for Rose and Subversion")
     parser.add_argument(
+        '--debug',
+        dest='debugging',
+        action='store_true',
+        help='enable printing of debug messages')
+    parser.add_argument(
         '--force',
         dest='force',
         action='store_true',
         help='force cache refresh of both username and password')
     args = parser.parse_args()
+
+    if args.debugging:
+        message.debugging = True
 
     # Start the GPG agent if it has not already started
     try:

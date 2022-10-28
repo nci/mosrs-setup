@@ -18,6 +18,8 @@ limitations under the License.
 
 from __future__ import print_function
 
+debugging = False
+
 class MessageError(Exception):
     """
     Indicates an anticipated error
@@ -34,23 +36,34 @@ def colour(text, colour_name):
         code = '\033[32m'
     elif colour_name == 'blue':
         code = '\033[94m'
+    elif colour_name == 'magenta':
+        code = '\033[95m'
     else:
         raise MessageError('Unimplemented colour:', colour)
     reset = '\033[m'
     return code + text + reset
+
+def debug(text):
+    """
+    Print a debug message
+    """
+    if debugging:
+        print('{}: {}'.format(colour('DBUG', 'magenta'), text))
 
 def info(text):
     """
     Print an information message
     """
     print('{}: {}'.format(colour('INFO', 'blue'), text))
-def warning(text):
-    """
-    Print a warning message
-    """
-    print('{}: {}'.format(colour('WARN', 'red'), text))
+
 def todo(text):
     """
     Print a todo message
     """
     print('{}: {}'.format(colour('TODO', 'green'), text))
+
+def warning(text):
+    """
+    Print a warning message
+    """
+    print('{}: {}'.format(colour('WARN', 'red'), text))
