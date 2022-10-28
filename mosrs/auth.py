@@ -36,7 +36,7 @@ class AuthError(Exception):
     """
     pass
 
-svn_servers = os.path.join(os.environ['HOME'], '.subversion/servers')
+SVN_SERVERS = os.path.join(os.environ['HOME'], '.subversion/servers')
 
 def get_rose_username():
     """
@@ -44,7 +44,7 @@ def get_rose_username():
     """
     try:
         config = SafeConfigParser()
-        config.read(svn_servers)
+        config.read(SVN_SERVERS)
         return config.get('metofficesharedrepos', 'username')
     except ConfigParser.Error:
         info('Unable to retrieve your MOSRS username.')
@@ -59,7 +59,7 @@ def save_rose_username(username):
     process.communicate()
 
     config = SafeConfigParser()
-    config.read(svn_servers)
+    config.read(SVN_SERVERS)
 
     if not config.has_section('groups'):
         config.add_section('groups')
@@ -70,22 +70,22 @@ def save_rose_username(username):
     config.set('metofficesharedrepos', 'username', username)
     config.set('metofficesharedrepos', 'store-plaintext-passwords', 'no')
 
-    with open(svn_servers, 'w') as f:
-        config.write(f)
+    with open(SVN_SERVERS, 'w') as config_file:
+        config.write(config_file)
 
-rose_key = 'rosie:https:code.metoffice.gov.uk'
+ROSE_KEY = 'rosie:https:code.metoffice.gov.uk'
 
 def save_rose_password(passwd):
     """
     Store the Rose password in GPG agent
     """
-    gpg.preset_passphrase(rose_key, passwd)
+    gpg.preset_passphrase(ROSE_KEY, passwd)
 
 def get_rose_password():
     """
     Ask GPG agent for the Rose password
     """
-    return gpg.get_passphrase(rose_key)
+    return gpg.get_passphrase(ROSE_KEY)
 
 def rose_password_is_cached():
     """
@@ -99,15 +99,15 @@ def rose_password_is_cached():
         return False
     return True
 
-svn_prekey = '<https://code.metoffice.gov.uk:443> Met Office Code'
-svn_url = 'https://code.metoffice.gov.uk/svn/test'
+SVN_PREKEY = '<https://code.metoffice.gov.uk:443> Met Office Code'
+SVN_URL = 'https://code.metoffice.gov.uk/svn/test'
 
 def get_svn_key():
     """
     Use the hexdigest of the md5 hash of
     the Subversion URL as the svn key
     """
-    return md5(svn_prekey).hexdigest()
+    return md5(SVN_PREKEY).hexdigest()
 
 def save_svn_password(passwd):
     """
@@ -196,14 +196,14 @@ def update(user=None):
     try:
         save_rose_password(passwd)
         save_svn_password(passwd)
-    except gpg.GPGError as e:
+    except gpg.GPGError as exc:
         warning('Saving credentials failed:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
         raise AuthError
     # Check Subversion credentials
     try:
-        check_svn_credentials(svn_url)
+        check_svn_credentials(SVN_URL)
     except AuthError:
         # Clear the user and try one more time
         warning('Subversion authentication failed.')
@@ -212,13 +212,13 @@ def update(user=None):
         save_rose_username(user)
         save_rose_password(passwd)
         save_svn_password(passwd)
-        check_svn_credentials(svn_url)
+        check_svn_credentials(SVN_URL)
     # Check Rose credentials separately, allowing failure
     try:
         check_rose_credentials(user)
-    except AuthError as e:
+    except AuthError as exc:
         warning('Rose authentication failed:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
 
 def check_or_update():
@@ -236,10 +236,10 @@ def check_or_update():
         return
     # Check Subversion credentials
     try:
-        check_svn_credentials(svn_url)
-    except AuthError as e:
+        check_svn_credentials(SVN_URL)
+    except AuthError as exc:
         warning('Subversion authentication with cached credentials failed:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
         update(user)
         return
@@ -250,9 +250,9 @@ def check_or_update():
     # Check Rose credentials, allowing failure
     try:
         check_rose_credentials(user)
-    except AuthError as e:
+    except AuthError as exc:
         info('Rose authentication with cached credentials failed:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
 
 def start_gpg_agent():
@@ -261,9 +261,9 @@ def start_gpg_agent():
     """
     try:
         gpg.start_gpg_agent()
-    except gpg.GPGError as e:
+    except gpg.GPGError as exc:
         warning('GPGError in start_gpg_agent:')
-        for arg in e.args:
+        for arg in exc.args:
             info(arg)
         raise AuthError
 
