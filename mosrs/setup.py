@@ -26,7 +26,7 @@ from shutil import copy2
 
 from mosrs.host import get_host, on_accessdev
 from mosrs.message import info, warning, todo
-from . import auth, gpg
+from . import auth, gpg, message
 
 class SetupError(Exception):
     """
@@ -165,7 +165,15 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
-    parser.parse_args()
+    parser.add_argument(
+        '--debug',
+        dest='debugging',
+        action='store_true',
+        help='enable printing of debug messages')
+    args = parser.parse_args()
+
+    if args.debugging:
+        message.debugging = True
 
     print(
         'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
