@@ -55,7 +55,9 @@ def save_rose_username(username):
     Add the Rose username & server settings to Subversion's config file
     """
     # Run 'svn help' to create the config files if they don't exist
-    process = Popen(['svn', 'help'], stdout=PIPE)
+    process = Popen(
+        ['svn', 'help'],
+        stdout=PIPE)
     process.communicate()
 
     config = SafeConfigParser()
@@ -99,6 +101,7 @@ def rose_password_is_cached():
         return False
     return True
 
+SVN_AUTH_DIR = os.path.join(os.environ['HOME'], '.subversion/auth/svn.simple')
 SVN_PREKEY = '<https://code.metoffice.gov.uk:443> Met Office Code'
 SVN_URL = 'https://code.metoffice.gov.uk/svn/test'
 
@@ -108,6 +111,54 @@ def get_svn_key():
     the Subversion URL as the svn key
     """
     return md5(SVN_PREKEY).hexdigest()
+
+def svn_key_is_saved(username):
+    """
+    Check that the Subversion key and username are already stored
+    """
+    svn_key = get_svn_key()
+    svn_auth_path = os.path.join(SVN_AUTH_DIR, svn_key)
+    grep_prekey = Popen(
+        ['grep', SVN_PREKEY, svn_auth_path],
+        stdout=PIPE,
+        stderr=PIPE)
+    _stdout, stderr = grep_prekey.communicate()
+    if grep_prekey.returncode != 0:
+        debug('grep "{}" failed with:'.format(SVN_PREKEY))
+        debug(stderr)
+        return False
+    grep_username = Popen(
+        ['grep', username, svn_auth_path],
+        stdout=PIPE,
+        stderr=PIPE)
+    _stdout, stderr = grep_username.communicate()
+    if grep_username.returncode != 0:
+        debug('grep "{}" failed with:'.format(username))
+        debug(stderr)
+        return False
+    return True
+
+def save_svn_username(username, url):
+    """
+    Try svn info interactively with username and url.
+    This will store the Subversion key and username.
+    """
+    info('Subversion will now ask for your credentials to save your MOSRS username.')
+    process = Popen(
+        ['svn', 'info', '--username', username, url],
+        stdout=PIPE,
+        stderr=PIPE)
+    stdout, stderr = process.communicate()
+    stdout = '' if stdout is None else stdout
+    stderr = '' if stderr is None else stderr
+    unable_message = (
+        'Unable to access {} via Subversion interactively with your credentials:'.format(url))
+    if process.returncode != 0:
+        raise AuthError(unable_message, stderr)
+    if 'Path:' in stdout:
+        debug('Successfully accessed Subversion interactively with your credentials.')
+    else:
+        raise AuthError(unable_message, stdout)
 
 def save_svn_password(passwd):
     """
@@ -135,23 +186,23 @@ def svn_password_is_cached():
         return False
     return True
 
-def request_credentials(user=None):
+def request_credentials(username=None):
     """
-    Request credentials from the user. If user=None then ask for the username
+    Request credentials from the user. If username=None then ask for the username
     as well as the password.
     """
-    if user is None:
-        user = raw_input('Please enter your MOSRS username: ')
-    passwd = getpass('Please enter the MOSRS password for {}: '.format(user))
-    return user, passwd
+    info('You now need to enter your MOSRS credentials so that GPG can cache your password.')
+    if username is None:
+        username = raw_input('Please enter your MOSRS username: ')
+    passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
+    return username, passwd
 
-def check_rose_credentials(user, prefix='u'):
+def check_rose_credentials(username, prefix='u'):
     """
     Try rosie hello with prefix to make sure that the cached password is working
     """
-    command = ['rosie', 'hello', '--prefix=' + prefix]
     process = Popen(
-        command,
+        ['rosie', 'hello', '--prefix={}'.format(prefix)],
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
@@ -160,7 +211,7 @@ def check_rose_credentials(user, prefix='u'):
     unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
     if process.returncode != 0:
         raise AuthError(unable_message, stderr)
-    if 'Hello ' + user in stdout:
+    if 'Hello ' + username in stdout:
         info('Successfully accessed rosie with your credentials.')
     else:
         raise AuthError(unable_message, stdout)
@@ -169,9 +220,8 @@ def check_svn_credentials(url):
     """
     Try subversion info with url to make sure that the cached password is working
     """
-    command = ['svn', 'info', '--non-interactive', url]
     process = Popen(
-        command,
+        ['svn', 'info', '--non-interactive', url],
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
@@ -185,14 +235,16 @@ def check_svn_credentials(url):
     else:
         raise AuthError(unable_message, stdout)
 
-def update(user=None):
+def update(username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
 
     # Ask for credentials
-    user, passwd = request_credentials(user)
-    save_rose_username(user)
+    username, passwd = request_credentials(username)
+    save_rose_username(username)
+    if not svn_key_is_saved(username):
+        save_svn_username(username, SVN_URL)
     try:
         save_rose_password(passwd)
         save_svn_password(passwd)
@@ -207,15 +259,15 @@ def update(user=None):
     except AuthError:
         # Clear the user and try one more time
         warning('Subversion authentication failed.')
-        user = None
-        user, passwd = request_credentials(user)
-        save_rose_username(user)
+        username = None
+        username, passwd = request_credentials(username)
+        save_rose_username(username)
         save_rose_password(passwd)
         save_svn_password(passwd)
         check_svn_credentials(SVN_URL)
     # Check Rose credentials separately, allowing failure
     try:
-        check_rose_credentials(user)
+        check_rose_credentials(username)
     except AuthError as exc:
         warning('Rose authentication failed.')
         for arg in exc.args:
@@ -226,13 +278,15 @@ def check_or_update():
     Check that credentials are cached and work,
     otherwise call update to obtain new credentials
     """
-    user = get_rose_username()
-    if user is None:
+    username = get_rose_username()
+    if username is None:
         update()
         return
+    if not svn_key_is_saved(username):
+        save_svn_username(username, SVN_URL)
     # Check Subversion password cache
     if not svn_password_is_cached():
-        update(user)
+        update(username)
         return
     # Check Subversion credentials
     try:
@@ -241,15 +295,15 @@ def check_or_update():
         warning('Subversion authentication with cached credentials failed.')
         for arg in exc.args:
             info(arg)
-        update(user)
+        update(username)
         return
     # Check Rose password cache
     if not rose_password_is_cached():
-        update(user)
+        update(username)
         return
     # Check Rose credentials, allowing failure
     try:
-        check_rose_credentials(user)
+        check_rose_credentials(username)
     except AuthError as exc:
         info('Rose authentication with cached credentials failed.')
         for arg in exc.args:
@@ -301,7 +355,7 @@ def main():
     # Check or update the user's credentials
     try:
         if args.force:
-            update(user=None)
+            update(username=None)
         else:
             check_or_update()
     except AuthError:
