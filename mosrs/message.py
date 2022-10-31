@@ -18,7 +18,7 @@ limitations under the License.
 
 from __future__ import print_function
 
-debugging = False
+debugging = False # pylint: disable=C0103
 
 class MessageError(Exception):
     """
