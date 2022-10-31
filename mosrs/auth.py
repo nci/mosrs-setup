@@ -112,10 +112,11 @@ def get_svn_key():
     """
     return md5(SVN_PREKEY).hexdigest()
 
-def svn_key_is_saved(username):
+def svn_username_is_saved(username):
     """
     Check that the Subversion key and username are already stored
     """
+    debug('Checking that username "{}" is stored by Subversion'.format(username))
     svn_key = get_svn_key()
     svn_auth_path = os.path.join(SVN_AUTH_DIR, svn_key)
     grep_prekey = Popen(
@@ -143,9 +144,9 @@ def save_svn_username(username, url):
     Try svn info interactively with username and url.
     This will store the Subversion key and username.
     """
-    info('Subversion will now ask for your credentials to save your MOSRS username.')
+    info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
     process = Popen(
-        ['svn', 'info', '--username', username, url],
+        ['svn', 'info', '--force-interactive', '--username', username, url],
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
@@ -159,6 +160,19 @@ def save_svn_username(username, url):
         debug('Successfully accessed Subversion interactively with your credentials.')
     else:
         raise AuthError(unable_message, stdout)
+
+def check_saved_svn_username(username):
+    """
+    Check the realmstring and username stored by Subversion.
+    """
+    if not svn_username_is_saved(username):
+        save_svn_username(username, SVN_URL)
+        # Check again to ensure that username is consistent
+        if not svn_username_is_saved(username):
+            warning(
+                'The username "{}" does not match your saved MOSRS credentials.'.format(username))
+            return False
+    return True
 
 def save_svn_password(passwd):
     """
@@ -191,7 +205,7 @@ def request_credentials(username=None):
     Request credentials from the user. If username=None then ask for the username
     as well as the password.
     """
-    info('You now need to enter your MOSRS credentials so that GPG can cache your password.')
+    info('You need to enter your MOSRS credentials here so that GPG can cache your password.')
     if username is None:
         username = raw_input('Please enter your MOSRS username: ')
     passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
@@ -242,9 +256,11 @@ def update(username=None):
 
     # Ask for credentials
     username, passwd = request_credentials(username)
+    # Check the realmstring and username stored by Subversion
+    if not check_saved_svn_username(username):
+        raise AuthError
+    # Save credentials
     save_rose_username(username)
-    if not svn_key_is_saved(username):
-        save_svn_username(username, SVN_URL)
     try:
         save_rose_password(passwd)
         save_svn_password(passwd)
@@ -262,6 +278,8 @@ def update(username=None):
         username = None
         username, passwd = request_credentials(username)
         save_rose_username(username)
+        if not svn_username_is_saved(username):
+            save_svn_username(username, SVN_URL)
         save_rose_password(passwd)
         save_svn_password(passwd)
         check_svn_credentials(SVN_URL)
@@ -282,8 +300,11 @@ def check_or_update():
     if username is None:
         update()
         return
-    if not svn_key_is_saved(username):
-        save_svn_username(username, SVN_URL)
+    # Check the realmstring and username stored by Subversion
+    if not check_saved_svn_username(username):
+        info('Try again')
+        update()
+        return
     # Check Subversion password cache
     if not svn_password_is_cached():
         update(username)
