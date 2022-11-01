@@ -23,7 +23,7 @@ Note that `mosrs-setup` is intended to only run `gpg-agent` in interactive login
 - Performs the following actions:
   - Starts `gpg-agent` and runs it for a maximum of 12 hours.
   - Defines the environment variables `GPG_AGENT_INFO` and `GPG_TTY`.
-  - Runs `svn info` interactively to store your MOSRS username and related information in a file in the directory `SHOME/.subversion/auth/svn.simple`, if this information is not already stored there.
+  - Runs `svn info` interactively to store your MOSRS username and related information in a file in the directory `$HOME/.subversion/auth/svn.simple`, if this information is not already stored there.
   - Creates the file `$HOME/.subversion/servers` and adds your MOSRS username there, if your username is not already defined.
   - Caches your MOSRS password for at most 12 hours, and checks it using both `svn` and `rosie`.
 
