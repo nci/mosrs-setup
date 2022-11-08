@@ -163,7 +163,8 @@ def save_svn_username(username, url):
 
 def check_saved_svn_username(username):
     """
-    Check the realmstring and username stored by Subversion.
+    Check the realmstring and username saved by Subversion.
+    Save the username if it is not already saved.
     """
     if not svn_username_is_saved(username):
         save_svn_username(username, SVN_URL)
@@ -215,6 +216,7 @@ def check_rose_credentials(username, prefix='u'):
     """
     Try rosie hello with prefix to make sure that the cached password is working
     """
+    info('Checking your credentials using rosie. Please wait.')
     process = Popen(
         ['rosie', 'hello', '--prefix={}'.format(prefix)],
         stdout=PIPE,
@@ -234,6 +236,7 @@ def check_svn_credentials(url):
     """
     Try subversion info with url to make sure that the cached password is working
     """
+    info('Checking your credentials using Subversion. Please wait.')
     process = Popen(
         ['svn', 'info', '--non-interactive', url],
         stdout=PIPE,
@@ -249,14 +252,14 @@ def check_svn_credentials(url):
     else:
         raise AuthError(unable_message, stdout)
 
-def update(username=None):
+def request_and_save_credentials(username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
-
     # Ask for credentials
     username, passwd = request_credentials(username)
-    # Check the realmstring and username stored by Subversion
+    # Check against the realmstring and username stored by Subversion.
+    # Save the realmstring and username if not already saved.
     if not check_saved_svn_username(username):
         raise AuthError
     # Save credentials
@@ -269,19 +272,24 @@ def update(username=None):
         for arg in exc.args:
             debug(arg)
         raise AuthError
-    # Check Subversion credentials
+    return username
+
+def update(username=None):
+    """
+    Ask for credentials from the user & save in the GPG agent
+    """
+
     try:
+        # Ask for credentials from the user and save in the GPG agent
+        username = request_and_save_credentials(username)
+        # Check Subversion credentials
         check_svn_credentials(SVN_URL)
     except AuthError:
         # Clear the user and try one more time
         warning('Subversion authentication failed.')
-        username = None
-        username, passwd = request_credentials(username)
-        save_rose_username(username)
-        if not svn_username_is_saved(username):
-            save_svn_username(username, SVN_URL)
-        save_rose_password(passwd)
-        save_svn_password(passwd)
+        # Ask for credentials from the user and save in the GPG agent
+        username = request_and_save_credentials(None)
+        # Check Subversion credentials
         check_svn_credentials(SVN_URL)
     # Check Rose credentials separately, allowing failure
     try:
@@ -376,7 +384,7 @@ def main():
     # Check or update the user's credentials
     try:
         if args.force:
-            update(username=None)
+            update()
         else:
             check_or_update()
     except AuthError:
