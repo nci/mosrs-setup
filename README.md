@@ -13,17 +13,35 @@ Note that `mosrs-setup` is intended to only run `gpg-agent` in interactive login
 ## Usage and expected outputs
 
 `mosrs-setup`:
-- Is intended for use once per `$HOME` directory as an initial setup.
-- Performs the actions listed under `mosrs-auth` below.
-- Also edits your `$HOME/.bashrc` file, after moving or copying it to `$HOME/.bashrc.old`. The updated `.bashrc` file starts up `gpg-agent` automatically for interactive login shells.
+```
+usage: mosrs-setup [-h] [--debug]
+
+Set up MOSRS authentication for Rose and Subversion by storing credentials
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --debug     enable printing of debug messages
+```
+- Use this command once per `$HOME` directory as an initial setup.
+- It performs the actions listed under `mosrs-auth` below.
+- It also edits your `$HOME/.bashrc` file, after moving or copying it to `$HOME/.bashrc.old`. The updated `.bashrc` file starts up `gpg-agent` automatically for interactive login shells.
   - If you do not want your `$HOME/.bashrc` file changed, do not run `mosrs-setup`. Just run `mosrs-auth` instead.
 
 `mosrs-auth`:
-- Is intended for every interactive login session when you want to run `fcm`, `svn`, `rose` or `rosie` to use the upstream MOSRS repository. Run `mosrs-auth` before any of these other commands.
-- Performs the following actions:
+```
+usage: mosrs-auth [-h] [--debug] [--force]
+
+Cache password to MOSRS for Rose and Subversion
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --debug     enable printing of debug messages
+  --force     force cache refresh of both username and password
+```
+- Use this command once in every interactive login session where you want to use the upstream MOSRS repository. Run `mosrs-auth` before running any `fcm`, `svn`, `rose` or `rosie` command that uses MOSRS.
+- It performs the following actions:
   - Starts `gpg-agent` and runs it for a maximum of 12 hours.
   - Defines the environment variables `GPG_AGENT_INFO` and `GPG_TTY`.
   - Runs `svn info` interactively to store your MOSRS username and related information in a file in the directory `$HOME/.subversion/auth/svn.simple`, if this information is not already stored there.
   - Creates the file `$HOME/.subversion/servers` and adds your MOSRS username there, if your username is not already defined.
   - Caches your MOSRS password for at most 12 hours, and checks it using both `svn` and `rosie`.
-
