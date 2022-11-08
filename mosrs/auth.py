@@ -216,6 +216,7 @@ def check_rose_credentials(username, prefix='u'):
     """
     Try rosie hello with prefix to make sure that the cached password is working
     """
+    info('Checking your credentials using rosie. Please wait.')
     process = Popen(
         ['rosie', 'hello', '--prefix={}'.format(prefix)],
         stdout=PIPE,
@@ -235,6 +236,7 @@ def check_svn_credentials(url):
     """
     Try subversion info with url to make sure that the cached password is working
     """
+    info('Checking your credentials using Subversion. Please wait.')
     process = Popen(
         ['svn', 'info', '--non-interactive', url],
         stdout=PIPE,
@@ -270,7 +272,7 @@ def request_and_save_credentials(username=None):
         for arg in exc.args:
             debug(arg)
         raise AuthError
-    return username, passwd
+    return username
 
 def update(username=None):
     """
@@ -279,14 +281,15 @@ def update(username=None):
 
     try:
         # Ask for credentials from the user and save in the GPG agent
-        username, passwd = request_and_save_credentials(username)
+        username = request_and_save_credentials(username)
         # Check Subversion credentials
         check_svn_credentials(SVN_URL)
     except AuthError:
         # Clear the user and try one more time
         warning('Subversion authentication failed.')
         # Ask for credentials from the user and save in the GPG agent
-        username, passwd = request_and_save_credentials(None)
+        username = request_and_save_credentials(None)
+        # Check Subversion credentials
         check_svn_credentials(SVN_URL)
     # Check Rose credentials separately, allowing failure
     try:
