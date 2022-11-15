@@ -40,11 +40,12 @@ def get_passphrase(cache_id):
     try:
         result = unquote(stdout[0][2:])
     except IndexError:
+        index_error_str = 'get_passphrase: IndexError'
         if stdout:
-            debug('get_passphrase: IndexError: len(stdout[0]) == {}'.format(len(stdout[0])))
+            debug(index_error_str + ': len(stdout[0]) == {}'.format(len(stdout[0])))
         else:
-            debug('get_passphrase: IndexError: stdout is empty')
-        raise GPGError('get_passphrase:', 'IndexError')
+            debug(index_error_str + ': stdout is empty')
+        raise GPGError(index_error_str)
     return result
 
 def clear_passphrase(cache_id):
