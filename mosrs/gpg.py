@@ -22,6 +22,7 @@ from binascii import hexlify
 from urllib import unquote
 from os import environ
 
+from mosrs.message import debug
 
 class GPGError(Exception):
     """
@@ -36,7 +37,16 @@ def get_passphrase(cache_id):
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
     stdout = send("GET_PASSPHRASE --no-ask --data {} X X X\n".format(cache_id))
-    return unquote(stdout[0][2:])
+    try:
+        result = unquote(stdout[0][2:])
+    except IndexError:
+        index_error_str = 'get_passphrase: IndexError'
+        if stdout:
+            debug(index_error_str + ': len(stdout[0]) == {}'.format(len(stdout[0])))
+        else:
+            debug(index_error_str + ': stdout is empty')
+        raise GPGError(index_error_str)
+    return result
 
 def clear_passphrase(cache_id):
     """
