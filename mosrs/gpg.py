@@ -36,7 +36,7 @@ def get_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    stdout = send("GET_PASSPHRASE --no-ask --data {} X X X\n".format(cache_id))
+    stdout = send('GET_PASSPHRASE --no-ask --data {} X X X\n'.format(cache_id))
     try:
         result = unquote(stdout[0][2:])
     except IndexError:
@@ -54,7 +54,7 @@ def clear_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    send("CLEAR_PASSPHRASE {}\n".format(cache_id))
+    send('CLEAR_PASSPHRASE {}\n'.format(cache_id))
 
 def preset_passphrase(keygrip, passphrase):
     """
@@ -65,7 +65,7 @@ def preset_passphrase(keygrip, passphrase):
     # Only -1 is allowed for timeout
     timeout = -1
     assert passphrase is not None
-    send("PRESET_PASSPHRASE {} {} {}\n".format(keygrip, timeout, hexlify(passphrase)))
+    send('PRESET_PASSPHRASE {} {} {}\n'.format(keygrip, timeout, hexlify(passphrase)))
 
 def send(message):
     """
@@ -90,7 +90,7 @@ def check_return(stdout):
     Check status returned on last line
     """
     result = stdout.split('\n')[-2]
-    if result != "OK":
+    if result != 'OK':
         raise GPGError('gpg.check_return:', result)
 
 def set_environ():
