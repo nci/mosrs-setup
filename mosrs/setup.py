@@ -45,6 +45,15 @@ def prompt_or_default(prompt, default):
         response = default
     return response
 
+def check_rose():
+    """
+    Check the rose command
+    """
+    try:
+        auth.check_rose()
+    except auth.AuthError as exc:
+        raise SetupError(*(exc.args))
+
 def gpg_startup():
     """
     Insert or append a GPG agent script into the user's startup script
@@ -72,7 +81,7 @@ def gpg_startup():
     startup_name = '.bashrc'
     startup_path = path.join(home, startup_name)
     if not path.exists(startup_path):
-        warning('Startup script ~/{} does not exist'.format(startup_name))
+        warning('Startup script ~/{} does not exist.'.format(startup_name))
         todo('Please contact the helpdesk.')
         raise SetupError
     else:
@@ -132,7 +141,7 @@ def setup_mosrs_account():
     # Save account details and cache credentials
     mosrs_request = None
     while mosrs_request not in ['yes', 'no', 'y', 'n']:
-        mosrs_request = prompt_or_default("Do you have a MOSRS account", "yes")
+        mosrs_request = prompt_or_default('Do you have a MOSRS account', 'yes')
         mosrs_request = mosrs_request.lower()
     if mosrs_request.startswith('y'):
         try:
@@ -164,7 +173,7 @@ def main():
         return
 
     parser = argparse.ArgumentParser(
-        description="Set up MOSRS authentication for Rose and Subversion by storing credentials")
+        description='Set up MOSRS authentication for Rose and Subversion by storing credentials')
     parser.add_argument(
         '--debug',
         dest='debugging',
@@ -179,6 +188,7 @@ def main():
         'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
 
     try:
+        check_rose()
         try:
             setup_mosrs_account()
         except gpg.GPGError:
@@ -205,7 +215,7 @@ def main():
                 mosrs-auth
             """))
     finally:
-        info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au"')
+        info('You can ask for help with the ACCESS systems by emailing "help@nci.org.au".')
 
 if __name__ == '__main__':
     main()
