@@ -44,7 +44,7 @@ def get_passphrase(cache_id):
         if stdout:
             debug(index_error_str + ': len(stdout[0]) == {}'.format(len(stdout[0])))
         else:
-            debug(index_error_str + ': stdout is empty')
+            debug(index_error_str + ': stdout is empty.')
         raise GPGError(index_error_str)
     return result
 
