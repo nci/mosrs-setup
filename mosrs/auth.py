@@ -237,7 +237,8 @@ def svn_username_is_saved_in_auth(username):
     """
     Check that the Subversion key and username are already stored
     """
-    debug('Checking that MOSRS username "{}" is stored in the Subversion auth dir.'.format(username))
+    debug(
+        'Checking that MOSRS username "{}" is stored in the Subversion auth dir.'.format(username))
     svn_key = get_svn_key()
     svn_auth_path = os.path.join(SVN_AUTH_DIR, svn_key)
     grep_prekey = Popen(
@@ -384,8 +385,8 @@ def update(rose_username, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
-    debug('MOSRS Rose username passed to update is "{}".'.format(rose_username))
-    debug('MOSRS Subversion username passed to update is "{}".'.format(svn_username))
+    debug('MOSRS Rose username passed to update is {}.'.format(rose_username))
+    debug('MOSRS Subversion username passed to update is {}.'.format(svn_username))
     if svn_username is None:
         svn_username = rose_username
     try:
@@ -405,7 +406,7 @@ def update(rose_username, svn_username=None):
         check_svn_credentials(SVN_URL)
     # Save Rose username if necessary
     if rose_username is None:
-        save_rose_username(svn_username)
+        save_rose_username(username)
     # Check Rose credentials separately, allowing failure
     try:
         check_rose_credentials(username)
