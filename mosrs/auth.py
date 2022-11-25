@@ -122,8 +122,11 @@ def save_rose_username(username):
     # Write the config to a string
     with io.BytesIO() as config_file:
         config.write(config_file)
+        # Wind back the file to read it
         config_file.seek(0)
-        config_str = config_file.read()
+        # Remove spaces from " = " delimiter
+        # Rose configuration examples do not use " = "
+        config_str = config_file.read().replace(' = ', '=', 1)
     # Create ~/.metomi directory if it does not exist
     try:
         os.mkdir(METOMI_DIR, 0o755)
