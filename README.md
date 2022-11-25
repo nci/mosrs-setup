@@ -40,8 +40,13 @@ optional arguments:
 ```
 - Use this command once in every interactive login session where you want to use the upstream MOSRS repository. Run `mosrs-auth` before running any `fcm`, `svn`, `rose` or `rosie` command that uses MOSRS.
 - It performs the following actions:
+  - Uses `which rose` to check that the `rose` command is available.
   - Starts `gpg-agent` and runs it for a maximum of 12 hours.
   - Defines the environment variables `GPG_AGENT_INFO` and `GPG_TTY`.
+  - Runs `rose config` to obtain your MOSRS username from the Rose configuration. It is assumed to be in `$HOME/.metomi/rose.conf`.
+  - Parses the file `$HOME/.subversion/servers` to obtain your MOSRS username.
+  - Checks that the MOSRS usernames obtained from `rose config` and `$HOME/.subversion/servers` match.
   - Runs `svn info` interactively to store your MOSRS username and related information in a file in the directory `$HOME/.subversion/auth/svn.simple`, if this information is not already stored there.
-  - Creates the file `$HOME/.subversion/servers` and adds your MOSRS username there, if your username is not already defined.
+  - Creates the file `$HOME/.subversion/servers` and adds your MOSRS username there, if your username is not already stored there.
+  - Creates the directory `$HOME/.metomi` and the file `$HOME/.metomi/rose.conf` and adds your MOSRS username there, if your username is not already stored there.
   - Caches your MOSRS password for at most 12 hours, and checks it using both `svn` and `rosie`.

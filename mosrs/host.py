@@ -24,21 +24,21 @@ def get_host():
     """
     hostname = socket.gethostname()
     for name in [
-            "accessdev",
-            "gadi-login",
-            "ood"]:
+            'accessdev',
+            'gadi-login',
+            'ood']:
         if name in hostname:
             return name
     for name in [
-            "gadi-analysis",
-            "gadi-dm"]:
+            'gadi-analysis',
+            'gadi-dm']:
         if name in hostname:
-            return "ARE"
-    return "unsupported"
+            return 'ARE'
+    return 'unsupported'
 
 def on_accessdev():
     """
     Boolean function returns True if the host is accessdev
     """
     hostname = get_host()
-    return hostname == "accessdev"
+    return hostname == 'accessdev'
