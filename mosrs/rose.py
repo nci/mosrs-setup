@@ -162,11 +162,10 @@ def check_rose_credentials(username, prefix='u'):
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
     unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
     if process.returncode != 0:
         raise AuthError(unable_message, stderr)
+    stdout = '' if stdout is None else stdout
     if 'Hello ' + username in stdout:
         info('Successfully accessed rosie with your credentials.')
     else:

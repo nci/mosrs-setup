@@ -116,12 +116,11 @@ def save_svn_username_in_auth(username, url=SVN_URL):
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
     unable_message = (
         'Unable to access {} via Subversion interactively with your credentials:'.format(url))
     if process.returncode != 0:
         raise AuthError(unable_message, stderr)
+    stdout = '' if stdout is None else stdout
     if 'Path:' in stdout:
         debug('Successfully accessed Subversion interactively with your credentials.')
     else:
@@ -177,11 +176,10 @@ def check_svn_credentials(url=SVN_URL):
         stdout=PIPE,
         stderr=PIPE)
     stdout, stderr = process.communicate()
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
     unable_message = 'Unable to access {} via Subversion with your credentials:'.format(url)
     if process.returncode != 0:
         raise AuthError(unable_message, stderr)
+    stdout = '' if stdout is None else stdout
     if 'Path:' in stdout:
         info('Successfully accessed Subversion with your credentials.')
     else:
