@@ -22,13 +22,8 @@ from binascii import hexlify
 from urllib import unquote
 from os import environ
 
+from mosrs.exception import GPGError
 from mosrs.message import debug
-
-class GPGError(Exception):
-    """
-    Indicates an anticipated error
-    """
-    pass
 
 def get_passphrase(cache_id):
     """

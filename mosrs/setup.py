@@ -24,15 +24,10 @@ from textwrap import dedent
 from os import environ, rename, path
 from shutil import copy2
 
+from mosrs.exception import AuthError, GPGError, SetupError
 from mosrs.host import get_host, on_accessdev
 from mosrs.message import info, warning, todo
-from . import auth, gpg, message
-
-class SetupError(Exception):
-    """
-    Indicates user needs to take action before setup can complete
-    """
-    pass
+from . import auth, gpg, message, rose
 
 def prompt_or_default(prompt, default):
     """
@@ -50,8 +45,8 @@ def check_rose():
     Check the rose command
     """
     try:
-        auth.check_rose()
-    except auth.AuthError as exc:
+        rose.check_rose()
+    except AuthError as exc:
         raise SetupError(*(exc.args))
 
 def gpg_startup():
@@ -132,7 +127,7 @@ def setup_mosrs_account():
     """
     try:
         gpg.start_gpg_agent()
-    except gpg.GPGError as exc:
+    except GPGError as exc:
         warning('GPGError in setup_mosrs_account:')
         for arg in exc.args:
             info(arg)
@@ -146,7 +141,7 @@ def setup_mosrs_account():
     if mosrs_request.startswith('y'):
         try:
             auth.check_or_update()
-        except auth.AuthError:
+        except AuthError:
             warning('Authentication check and update failed.')
             todo(dedent(
                 """
@@ -191,7 +186,7 @@ def main():
         check_rose()
         try:
             setup_mosrs_account()
-        except gpg.GPGError:
+        except GPGError:
             return
         except SetupError:
             raise
