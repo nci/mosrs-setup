@@ -17,18 +17,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from subprocess import Popen, PIPE
 from binascii import hexlify
+import os
+from os import environ, path
+from subprocess import Popen, PIPE
 from urllib import unquote
-from os import environ
 
+from mosrs.exception import GPGError
 from mosrs.message import debug
-
-class GPGError(Exception):
-    """
-    Indicates an anticipated error
-    """
-    pass
 
 def get_passphrase(cache_id):
     """
@@ -114,9 +110,49 @@ def set_environ():
         stdout_line = stdout.splitlines()[0]
         environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
 
+def check_gpg_agent_conf():
+    """
+    Check the user's GPG agent configuration and append any missing lines
+    """
+    gpg_agent_conf_allow_preset_passphrase = 'allow-preset-passphrase'
+    gpg_agent_conf_max_cache_ttl = 'max-cache-ttl 43200'
+
+    home = environ['HOME']
+    gnupg_dir_name = '.gnupg'
+    gnupg_dir_path = path.join(home, gnupg_dir_name)
+    if not path.exists(gnupg_dir_path):
+        os.mkdir(gnupg_dir_path, 0o755)
+        debug('Created {}'.format(gnupg_dir_path))
+    gpg_agent_conf_name = 'gpg-agent.conf'
+    gpg_agent_conf_path = path.join(gnupg_dir_path, gpg_agent_conf_name)
+    if not path.exists(gpg_agent_conf_path):
+        with open(gpg_agent_conf_path, 'w') as gpg_agent_conf_file:
+            gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
+            gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
+        debug('Created {}'.format(gpg_agent_conf_path))
+    else:
+        # Check if gpg_agent.conf contains the line 'allow-preset-passphrase'
+        grep_command = Popen(
+            ['grep', gpg_agent_conf_allow_preset_passphrase, gpg_agent_conf_path],
+            stdout=PIPE)
+        grep_command.communicate()
+        if grep_command.returncode != 0:
+            with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
+                gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
+        # Check if gpg_agent.conf contains the line 'max-cache-ttl 43200'
+        grep_command = Popen(
+            ['grep', gpg_agent_conf_max_cache_ttl, gpg_agent_conf_path],
+            stdout=PIPE)
+        grep_command.communicate()
+        if grep_command.returncode != 0:
+            with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
+                gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
+        debug('Checked and updated {}'.format(gpg_agent_conf_path))
+
 def start_gpg_agent():
     """
     Make sure that the agent is running
     """
+    check_gpg_agent_conf()
     send('GETINFO version')
     set_environ()

@@ -18,13 +18,9 @@ limitations under the License.
 
 from __future__ import print_function
 
-debugging = False # pylint: disable=C0103
+from mosrs.exception import MessageError
 
-class MessageError(Exception):
-    """
-    Indicates an anticipated error
-    """
-    pass
+debugging = False # pylint: disable=C0103
 
 def colour(text, colour_name):
     """
