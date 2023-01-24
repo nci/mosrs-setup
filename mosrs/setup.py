@@ -60,7 +60,7 @@ def gpg_startup():
         export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
     }
     function start_gpg_agent {
-        mkdir -p $HOME/.gnupg
+        mkdir -p -m u=rwx,go=--- $HOME/.gnupg
         gpg-connect-agent /bye
         export_gpg_environ
     }

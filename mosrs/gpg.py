@@ -121,7 +121,7 @@ def check_gpg_agent_conf():
     gnupg_dir_name = '.gnupg'
     gnupg_dir_path = path.join(home, gnupg_dir_name)
     if not path.exists(gnupg_dir_path):
-        os.mkdir(gnupg_dir_path, 0o755)
+        os.mkdir(gnupg_dir_path, 0o700)
         debug('Created {}'.format(gnupg_dir_path))
     gpg_agent_conf_name = 'gpg-agent.conf'
     gpg_agent_conf_path = path.join(gnupg_dir_path, gpg_agent_conf_name)
