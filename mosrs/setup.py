@@ -22,8 +22,8 @@ import argparse
 from subprocess import Popen, PIPE
 from textwrap import dedent
 from os import environ, path
-from shutil import copy2
 
+from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError, SetupError
 from mosrs.host import get_host, on_accessdev
 from mosrs.message import info, warning, todo
@@ -88,10 +88,8 @@ def gpg_startup():
         if grep_gpg_agent_script.returncode == 0:
             return
 
-        # Old filename and pathname used for copy
-        old_name = startup_name + '.old'
-        old_path = path.join(home, old_name)
-        copy2(startup_path, old_path)
+        # Backup the startup file
+        backup(startup_name)
         # Append gpg_agent_script
         with open(startup_path, 'a') as startup_file:
             startup_file.write(gpg_agent_script)
