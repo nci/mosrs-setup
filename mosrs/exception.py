@@ -23,6 +23,12 @@ class AuthError(Exception):
     """
     pass
 
+class BackupError(Exception):
+    """
+    Indicates an anticipated error
+    """
+    pass
+
 class GPGError(Exception):
     """
     Indicates an anticipated error

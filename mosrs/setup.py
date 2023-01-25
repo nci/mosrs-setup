@@ -21,9 +21,9 @@ from __future__ import print_function
 import argparse
 from subprocess import Popen, PIPE
 from textwrap import dedent
-from os import environ, rename, path
-from shutil import copy2
+from os import environ, path
 
+from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError, SetupError
 from mosrs.host import get_host, on_accessdev
 from mosrs.message import info, warning, todo
@@ -51,7 +51,7 @@ def check_rose():
 
 def gpg_startup():
     """
-    Insert or append a GPG agent script into the user's startup script
+    Append a GPG agent script to the user's startup script
     """
     gpg_agent_script = dedent("""
     # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
@@ -82,36 +82,17 @@ def gpg_startup():
     else:
         # Check if gpg_agent_script is already referenced
         grep_gpg_agent_script = Popen(
-            ['grep', 'mosrs-setup gpg_agent_script', startup_path],
+            ['grep', 'mosrs-setup gpg_agent_script: DO NOT EDIT', startup_path],
             stdout=PIPE)
         grep_gpg_agent_script.communicate()
         if grep_gpg_agent_script.returncode == 0:
             return
 
-        # Old filename and pathname used for rename or copy
-        old_name = startup_name + '.old'
-        old_path = path.join(home, old_name)
-        # Look for NCI boilerplate in startup file
-        boilerplate = 'if in_interactive_shell; then'
-        grep_boilerplate = Popen(
-            ['grep', boilerplate, startup_path],
-            stdout=PIPE)
-        grep_boilerplate.communicate()
-        if grep_boilerplate.returncode == 0:
-            # Boilerplate has been found
-            rename(startup_path, old_path)
-            # Insert gpg_agent_script
-            with open(old_path, 'r') as old_startup_file:
-                old = old_startup_file.read()
-                insert_here = old.find(boilerplate)
-                new = old[:insert_here] + gpg_agent_script + old[insert_here:]
-                with open(startup_path, 'w') as startup_file:
-                    startup_file.write(new)
-        else:
-            copy2(startup_path, old_path)
-            # Append gpg_agent_script
-            with open(startup_path, 'a') as startup_file:
-                startup_file.write(gpg_agent_script)
+        # Backup the startup file
+        backup(startup_name)
+        # Append gpg_agent_script
+        with open(startup_path, 'a') as startup_file:
+            startup_file.write(gpg_agent_script)
 
     todo(dedent(
         """

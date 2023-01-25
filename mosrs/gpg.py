@@ -18,11 +18,11 @@ limitations under the License.
 """
 
 from binascii import hexlify
-import os
-from os import environ, path
+from os import environ, mkdir, path
 from subprocess import Popen, PIPE
 from urllib import unquote
 
+from mosrs.backup import backup
 from mosrs.exception import GPGError
 from mosrs.message import debug
 
@@ -121,11 +121,12 @@ def check_gpg_agent_conf():
     gnupg_dir_name = '.gnupg'
     gnupg_dir_path = path.join(home, gnupg_dir_name)
     if not path.exists(gnupg_dir_path):
-        os.mkdir(gnupg_dir_path, 0o700)
+        mkdir(gnupg_dir_path, 0o700)
         debug('Created {}'.format(gnupg_dir_path))
     gpg_agent_conf_name = 'gpg-agent.conf'
     gpg_agent_conf_path = path.join(gnupg_dir_path, gpg_agent_conf_name)
     if not path.exists(gpg_agent_conf_path):
+        backup(gnupg_dir_name)
         with open(gpg_agent_conf_path, 'w') as gpg_agent_conf_file:
             gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
@@ -137,6 +138,7 @@ def check_gpg_agent_conf():
             stdout=PIPE)
         grep_command.communicate()
         if grep_command.returncode != 0:
+            backup(gnupg_dir_name)
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
         # Check if gpg_agent.conf contains the line 'max-cache-ttl 43200'
@@ -145,6 +147,7 @@ def check_gpg_agent_conf():
             stdout=PIPE)
         grep_command.communicate()
         if grep_command.returncode != 0:
+            backup(gnupg_dir_name)
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
         debug('Checked and updated {}'.format(gpg_agent_conf_path))

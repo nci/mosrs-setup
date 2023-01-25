@@ -20,9 +20,10 @@ limitations under the License.
 import ConfigParser
 from ConfigParser import SafeConfigParser
 import io
-import os
+from os import environ, mkdir, path
 from subprocess import Popen, PIPE
 
+from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError
 from mosrs.message import debug, info, warning, todo
 from . import gpg
@@ -98,8 +99,8 @@ def get_rose_username():
         debug(unable_message)
         return None
 
-METOMI_DIR = os.path.join(os.environ['HOME'], '.metomi')
-METOMI_ROSE_CONF = os.path.join(METOMI_DIR, 'rose.conf')
+METOMI_DIR = path.join(environ['HOME'], '.metomi')
+METOMI_ROSE_CONF = path.join(METOMI_DIR, 'rose.conf')
 
 def save_rose_username(username):
     """
@@ -118,10 +119,10 @@ def save_rose_username(username):
         # Rose configuration examples do not use " = "
         config_str = config_file.read().replace(' = ', '=', 1)
     # Create ~/.metomi directory if it does not exist
-    try:
-        os.mkdir(METOMI_DIR, 0o755)
-    except OSError:
-        pass
+    if not path.exists(METOMI_DIR):
+        mkdir(METOMI_DIR, 0o755)
+    # Backup the ~/.metomi directory
+    backup('.metomi')
     # Append the config string to the Rose configuration
     with open(METOMI_ROSE_CONF, 'a') as rose_conf_file:
         rose_conf_file.write(config_str)

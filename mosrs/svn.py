@@ -20,14 +20,17 @@ limitations under the License.
 import ConfigParser
 from ConfigParser import SafeConfigParser
 from hashlib import md5
-import os
+from os import environ, mkdir, path
 from subprocess import Popen, PIPE
 
+from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError
 from mosrs.message import debug, info, warning
 from . import gpg
 
-SVN_SERVERS = os.path.join(os.environ['HOME'], '.subversion', 'servers')
+SVN_NAME = '.subversion'
+SVN_PATH = path.join(environ['HOME'], SVN_NAME)
+SVN_SERVERS = path.join(SVN_PATH, 'servers')
 
 def get_svn_username():
     """
@@ -62,11 +65,13 @@ def save_svn_username(username):
         config.add_section('metofficesharedrepos')
     config.set('metofficesharedrepos', 'username', username)
     config.set('metofficesharedrepos', 'store-plaintext-passwords', 'no')
-
+    # Backup the ~/.subversion directory
+    backup(SVN_NAME)
+    # Write the config
     with open(SVN_SERVERS, 'w') as config_file:
         config.write(config_file)
 
-SVN_AUTH_DIR = os.path.join(os.environ['HOME'], '.subversion/auth/svn.simple')
+SVN_AUTH_DIR = path.join(SVN_PATH, 'auth', 'svn.simple')
 SVN_PREKEY = '<https://code.metoffice.gov.uk:443> Met Office Code'
 SVN_URL = 'https://code.metoffice.gov.uk/svn/test'
 
@@ -84,7 +89,7 @@ def svn_username_is_saved_in_auth(username):
     debug(
         'Checking that MOSRS username "{}" is stored in the Subversion auth dir.'.format(username))
     svn_key = get_svn_key()
-    svn_auth_path = os.path.join(SVN_AUTH_DIR, svn_key)
+    svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
     grep_prekey = Popen(
         ['grep', SVN_PREKEY, svn_auth_path],
         stdout=PIPE,
@@ -110,6 +115,11 @@ def save_svn_username_in_auth(username, url=SVN_URL):
     Try svn info interactively with username and url.
     This will store the Subversion key and username.
     """
+    # Backup the ~/.subversion directory
+    if not path.exists(SVN_PATH):
+        mkdir(SVN_PATH, 0o700)
+    backup(SVN_NAME)
+    # Try svn info
     info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
     process = Popen(
         ['svn', 'info', '--force-interactive', '--username', username, url],
