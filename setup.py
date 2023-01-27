@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosrs',
-    version='0.9.0',
+    version='0.9.1',
     description='Cache credentials for NCI users of MOSRS',
     license='Apache License, Version 2.0',
     packages=find_packages(),
