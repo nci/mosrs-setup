@@ -22,7 +22,7 @@ from os import environ, getpid, makedirs, path
 from subprocess import Popen, PIPE
 
 from mosrs.exception import BackupError
-from mosrs.message import debug
+from mosrs.message import debug, warning
 
 def get_backup_path():
     """
@@ -71,9 +71,11 @@ def backup(path_name):
     if not path.exists(full_backup_path):
         # Backup the file or directory
         process = Popen(
-            ['rsync', '-a', full_path, backup_path],
+            ['rsync', '-a', '--no-o', '--no-g', full_path, backup_path],
             stdout=PIPE,
             stderr=PIPE)
         _stdout, stderr = process.communicate()
         if process.returncode != 0:
-            raise BackupError('Backup via rsync failed: {}'.format(stderr))
+            warning('Backup via rsync failed: {}'.format(stderr))
+            return False
+    return True
