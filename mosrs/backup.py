@@ -19,6 +19,7 @@ limitations under the License.
 
 from datetime import date
 from os import environ, getpid, makedirs, path
+from shutil import rmtree
 from subprocess import Popen, PIPE
 
 from mosrs.exception import BackupError
@@ -76,6 +77,8 @@ def backup(path_name):
             stderr=PIPE)
         _stdout, stderr = process.communicate()
         if process.returncode != 0:
+            # Backup failed. Try to clean up
+            rmtree(full_backup_path, ignore_errors=True)
             warning('Backup via rsync failed: {}'.format(stderr))
             return False
     return True
