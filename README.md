@@ -26,6 +26,7 @@ optional arguments:
 - It performs the actions listed under `mosrs-auth` below.
 - It also edits your `$HOME/.bashrc` file, if necessary. The updated `.bashrc` file starts up `gpg-agent` automatically for interactive login shells.
   - If `$HOME/.bashrc` is changed, it is first backed up to the directory `$HOME/.mosrs-setup/backup.$TODAY.$PID` where `$TODAY` is today's date in ISO format and `$PID` is the current process ID.
+    - The backup is best-effort. If the backup fails, a warning is given and the changes are still made.
   - If you do not want your `$HOME/.bashrc` file changed, do not run `mosrs-setup`. Just run `mosrs-auth` instead.
 
 `mosrs-auth`:
@@ -53,3 +54,4 @@ optional arguments:
   - Creates the directory `$HOME/.metomi` and the file `$HOME/.metomi/rose.conf` and adds your MOSRS username there, if your username is not already stored there.
   - Caches your MOSRS password for at most 12 hours, and checks it using both `svn` and `rosie`.
   - If any files in any of the `$HOME/.gnupg`, `$HOME/.metomi` or `$HOME/.ssh` directories are changed, the whole directory is first backed up to the directory `$HOME/.mosrs-setup/backup.$TODAY.$PID` where `$TODAY` is today's date in ISO format and `$PID` is the current process ID.
+    - The backup is best-effort. If the backup fails, a warning is given and the changes are still made.
