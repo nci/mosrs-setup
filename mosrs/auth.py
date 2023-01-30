@@ -24,7 +24,7 @@ from textwrap import dedent
 from mosrs.exception import AuthError, GPGError
 from mosrs.host import on_accessdev
 from mosrs.message import debug, info, warning, todo
-from . import gpg, message, rose, svn
+from . import gpg, message, network, rose, svn
 
 def request_credentials(username=None):
     """
@@ -188,6 +188,11 @@ def main():
         message.debugging = True
 
     contact_helpdesk = 'Please contact the helpdesk.'
+
+    # Check connectivity
+    if not network.is_connected():
+        warning('Unable to access MOSRS at this time.')
+        return
 
     # Check the rose command
     try:
