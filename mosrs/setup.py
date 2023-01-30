@@ -27,7 +27,7 @@ from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError, SetupError
 from mosrs.host import get_host, on_accessdev
 from mosrs.message import info, warning, todo
-from . import auth, gpg, message, rose
+from . import auth, gpg, message, network, rose
 
 def prompt_or_default(prompt, default):
     """
@@ -162,6 +162,11 @@ def main():
 
     print(
         'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')
+
+    # Check connectivity
+    if not network.is_connected():
+        warning('Unable to access MOSRS at this time.')
+        return
 
     try:
         check_rose()
