@@ -23,11 +23,7 @@ optional arguments:
   --debug     enable printing of debug messages
 ```
 - Use this command once per `$HOME` directory as an initial setup.
-- It performs the actions listed under `mosrs-auth` below.
-- It also edits your `$HOME/.bashrc` file, if necessary. The updated `.bashrc` file starts up `gpg-agent` automatically for interactive login shells.
-  - If `$HOME/.bashrc` is changed, it is first backed up to the directory `$HOME/.mosrs-setup/backup.$TODAY.$PID` where `$TODAY` is today's date in ISO format and `$PID` is the current process ID.
-    - The backup is best-effort. If the backup fails, a warning is given and the changes are still made.
-  - If you do not want your `$HOME/.bashrc` file changed, do not run `mosrs-setup`. Just run `mosrs-auth` instead.
+- It performs the actions listed under `mosrs-auth` below, and prints some additional messages.
 
 `mosrs-auth`:
 ```
