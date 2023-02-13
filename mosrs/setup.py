@@ -19,13 +19,10 @@ limitations under the License.
 
 from __future__ import print_function
 import argparse
-from subprocess import Popen, PIPE
 from textwrap import dedent
-from os import environ, path
 
-from mosrs.backup import backup
 from mosrs.exception import AuthError, GPGError, SetupError
-from mosrs.host import get_host, on_accessdev
+from mosrs.host import on_accessdev
 from mosrs.message import info, warning, todo
 from . import auth, gpg, message, network, rose
 
@@ -48,59 +45,6 @@ def check_rose():
         rose.check_rose()
     except AuthError as exc:
         raise SetupError(*(exc.args))
-
-def gpg_startup():
-    """
-    Append a GPG agent script to the user's startup script
-    """
-    gpg_agent_script = dedent("""
-    # mosrs-setup gpg_agent_script: DO NOT EDIT BETWEEN HERE AND END
-    function export_gpg_environ {
-        export GPG_TTY=$(tty)
-        export GPG_AGENT_INFO="$(gpgconf --list-dirs agent-socket):0:1"
-    }
-    function start_gpg_agent {
-        mkdir -p -m u=rwx,go=--- $HOME/.gnupg
-        gpg-connect-agent /bye
-        export_gpg_environ
-    }
-    if in_interactive_shell; then
-        if in_login_shell; then
-            start_gpg_agent
-        fi
-    fi
-    # mosrs-setup gpg_agent_script: END
-
-    """)
-    home = environ['HOME']
-    startup_name = '.bashrc'
-    startup_path = path.join(home, startup_name)
-    if not path.exists(startup_path):
-        warning('Startup script ~/{} does not exist.'.format(startup_name))
-        todo('Please contact the helpdesk.')
-        raise SetupError
-    else:
-        # Check if gpg_agent_script is already referenced
-        grep_gpg_agent_script = Popen(
-            ['grep', 'mosrs-setup gpg_agent_script: DO NOT EDIT', startup_path],
-            stdout=PIPE)
-        grep_gpg_agent_script.communicate()
-        if grep_gpg_agent_script.returncode == 0:
-            return
-
-        # Backup the startup file
-        backup(startup_name)
-        # Append gpg_agent_script
-        with open(startup_path, 'a') as startup_file:
-            startup_file.write(gpg_agent_script)
-
-    todo(dedent(
-        """
-        GPG Agent has been added to your startup script. Please log out of {}
-        then back in again to make sure it has been activated.
-        """.format(get_host())
-        ))
-    raise SetupError
 
 def setup_mosrs_account():
     """
@@ -176,9 +120,6 @@ def main():
             return
         except SetupError:
             raise
-
-        # Insert or append a GPG agent script into the user's startup script
-        gpg_startup()
     except SetupError:
         todo('Once this has been done please run this setup script again.')
     else:
