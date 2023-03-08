@@ -157,5 +157,5 @@ def start_gpg_agent():
     Make sure that the agent is running
     """
     check_gpg_agent_conf()
-    send('GETINFO version')
+    send('RELOADAGENT')
     set_environ()
