@@ -14,20 +14,21 @@ Note that `mosrs-setup` is intended to only run `gpg-agent` in interactive login
 
 `mosrs-setup`:
 ```
-usage: mosrs-setup [-h] [--debug]
+usage: mosrs-setup [-h] [--debug] [--version]
 
-Set up MOSRS authentication for Rose and Subversion by storing credentials
+Set up MOSRS authentication for Rose and Subversion
 
 optional arguments:
   -h, --help  show this help message and exit
   --debug     enable printing of debug messages
+  --version   print version information and exit
 ```
 - Use this command once per `$HOME` directory as an initial setup.
 - It performs the actions listed under `mosrs-auth` below, and prints some additional messages.
 
 `mosrs-auth`:
 ```
-usage: mosrs-auth [-h] [--debug] [--force]
+usage: mosrs-auth [-h] [--debug] [--force] [--version]
 
 Cache password to MOSRS for Rose and Subversion
 
@@ -35,8 +36,9 @@ optional arguments:
   -h, --help  show this help message and exit
   --debug     enable printing of debug messages
   --force     force cache refresh of both username and password
+  --version   print version information and exit
 ```
-- Use this command once in every interactive login session where you want to use the upstream MOSRS repository. Run `mosrs-auth` before running any `fcm`, `svn`, `rose` or `rosie` command that uses MOSRS.
+- Use this command once in every interactive login session where you want to use the upstream MOSRS repository. Run `mosrs-auth` before running any `fcm`, `svn` or `rosie` command that uses MOSRS.
 - It performs the following actions:
   - Uses `wget` to check connectivity to MOSRS.
   - Uses `which rose` to check that the `rose` command is available.
