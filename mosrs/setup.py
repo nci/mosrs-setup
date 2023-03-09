@@ -23,8 +23,8 @@ from textwrap import dedent
 
 from mosrs.exception import AuthError, GPGError, SetupError
 from mosrs.host import on_accessdev
-from mosrs.message import info, warning, todo
-from . import auth, gpg, message, network, rose
+from mosrs.message import debug, info, warning, todo
+from . import auth, gpg, message, network, rose, version
 
 def prompt_or_default(prompt, default):
     """
@@ -92,17 +92,30 @@ def main():
         warning('This version of mosrs-setup is not intended to run on accessdev.')
         return
 
-    parser = argparse.ArgumentParser(
-        description='Set up MOSRS authentication for Rose and Subversion by storing credentials')
+    package_version = version.version()
+    package_version_message = 'mosrs-setup version {}'.format(package_version)
+    package_description = (
+        '{}: Set up MOSRS authentication for Rose and Subversion'.format(
+            package_version_message))
+    parser = argparse.ArgumentParser(description=package_description)
     parser.add_argument(
         '--debug',
         dest='debugging',
         action='store_true',
         help='enable printing of debug messages')
+    parser.add_argument(
+        '--version',
+        dest='version',
+        action='store_true',
+        help='print version information and exit')
     args = parser.parse_args()
 
     if args.debugging:
         message.debugging = True
+        debug(package_version_message)
+    if args.version:
+        print(package_version_message)
+        return
 
     print(
         'This script will set up your account to use Rose and the MOSRS Subversion repositories\n')

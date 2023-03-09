@@ -17,6 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import print_function
 import argparse
 from getpass import getpass
 from textwrap import dedent
@@ -24,7 +25,7 @@ from textwrap import dedent
 from mosrs.exception import AuthError, GPGError
 from mosrs.host import on_accessdev
 from mosrs.message import debug, info, warning, todo
-from . import gpg, message, network, rose, svn
+from . import gpg, message, network, rose, svn, version
 
 def request_credentials(username=None):
     """
@@ -171,7 +172,12 @@ def main():
         warning('This version of mosrs-auth is not intended to run on accessdev.')
         return
 
-    parser = argparse.ArgumentParser(description='Cache password to MOSRS for Rose and Subversion')
+    package_version = version.version()
+    package_version_message = 'mosrs-auth version {}'.format(package_version)
+    package_description = (
+        '{}: cache password to MOSRS for Rose and Subversion'.format(
+            package_version_message))
+    parser = argparse.ArgumentParser(description=package_description)
     parser.add_argument(
         '--debug',
         dest='debugging',
@@ -182,10 +188,19 @@ def main():
         dest='force',
         action='store_true',
         help='force cache refresh of both username and password')
+    parser.add_argument(
+        '--version',
+        dest='version',
+        action='store_true',
+        help='print version information and exit')
     args = parser.parse_args()
 
     if args.debugging:
         message.debugging = True
+        debug(package_version_message)
+    if args.version:
+        print(package_version_message)
+        return
 
     contact_helpdesk = 'Please contact the helpdesk.'
 
