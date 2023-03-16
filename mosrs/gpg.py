@@ -110,6 +110,22 @@ def set_environ():
         stdout_line = stdout.splitlines()[0]
         environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
 
+GNUPG_BASENAME = '.gnupg'
+GNUPG_DIR = path.join(environ['HOME'], GNUPG_BASENAME)
+
+def backup_gnupg():
+    """
+    Backup the ~/.gnupg directory
+    """
+    backup(GNUPG_BASENAME)
+
+def mkdir_gnupg():
+    """
+    Create the ~/.gnupg directory if it does not exist
+    """
+    if not path.exists(GNUPG_DIR):
+        mkdir(GNUPG_DIR, 0o700)
+
 def check_gpg_agent_conf():
     """
     Check the user's GPG agent configuration and append any missing lines
@@ -118,17 +134,13 @@ def check_gpg_agent_conf():
     gpg_agent_conf_allow_preset_passphrase = 'allow-preset-passphrase'
     gpg_agent_conf_max_cache_ttl = 'max-cache-ttl 43200'
 
-    home = environ['HOME']
-    gnupg_dir_name = '.gnupg'
-    gnupg_dir_path = path.join(home, gnupg_dir_name)
-    if not path.exists(gnupg_dir_path):
-        mkdir(gnupg_dir_path, 0o700)
-        conf_updated = True
-        debug('Created {}'.format(gnupg_dir_path))
+    # Create the ~/.gnupg directory if it does not exist
+    mkdir_gnupg()
     gpg_agent_conf_name = 'gpg-agent.conf'
-    gpg_agent_conf_path = path.join(gnupg_dir_path, gpg_agent_conf_name)
+    gpg_agent_conf_path = path.join(GNUPG_DIR, gpg_agent_conf_name)
     if not path.exists(gpg_agent_conf_path):
-        backup(gnupg_dir_name)
+        # Backup the ~/.gnupg directory
+        backup_gnupg()
         with open(gpg_agent_conf_path, 'w') as gpg_agent_conf_file:
             gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
@@ -142,7 +154,8 @@ def check_gpg_agent_conf():
             stdout=PIPE)
         grep_command.communicate()
         if grep_command.returncode != 0:
-            backup(gnupg_dir_name)
+            # Backup the ~/.gnupg directory
+            backup_gnupg()
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             conf_updated = True
@@ -153,7 +166,8 @@ def check_gpg_agent_conf():
             stdout=PIPE)
         grep_command.communicate()
         if grep_command.returncode != 0:
-            backup(gnupg_dir_name)
+            # Backup the ~/.gnupg directory
+            backup_gnupg()
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
             conf_updated = True
