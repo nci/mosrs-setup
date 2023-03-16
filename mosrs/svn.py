@@ -20,7 +20,7 @@ limitations under the License.
 import ConfigParser
 from ConfigParser import SafeConfigParser
 from hashlib import md5
-from os import environ, mkdir, path
+from os import environ, mkdir, path, remove
 from subprocess import Popen, PIPE
 
 from mosrs.backup import backup
@@ -31,6 +31,46 @@ from . import gpg
 SVN_NAME = '.subversion'
 SVN_PATH = path.join(environ['HOME'], SVN_NAME)
 SVN_SERVERS = path.join(SVN_PATH, 'servers')
+
+def backup_svn():
+    """
+    Backup the ~/.subversion directory.
+    """
+    if not path.exists(SVN_PATH):
+        mkdir(SVN_PATH, 0o700)
+    backup(SVN_NAME)
+
+def svn_servers_stores_plaintext_passwords():
+    """
+    Check that the Subversion servers file
+    allows plaintext passwords for metofficesharedrepos
+    """
+    debug(
+        'Checking if the Subversion servers file '
+        'allows plaintext passwords for "metofficesharedrepos".')
+    try:
+        config = SafeConfigParser()
+        config.read(SVN_SERVERS)
+    except ConfigParser.Error:
+        debug('Unable to check Subversion servers file.')
+        return False
+
+    if not config.has_section('groups'):
+        return False
+    if not config.has_section('metofficesharedrepos'):
+        return False
+    plaintext = config.get('metofficesharedrepos', 'store-plaintext-passwords')
+    debug('store-plaintext-passwords == "{}"'.format(plaintext))
+    return False if plaintext == 'no' else True
+
+def create_svn_config():
+    """
+    Run 'svn help' to create the Subversion config files if they don't exist
+    """
+    process = Popen(
+        ['svn', 'help'],
+        stdout=PIPE)
+    process.communicate()
 
 def get_svn_username():
     """
@@ -48,11 +88,11 @@ def save_svn_username(username):
     """
     Add the Rose username & server settings to Subversion servers file
     """
-    # Run 'svn help' to create the config files if they don't exist
-    process = Popen(
-        ['svn', 'help'],
-        stdout=PIPE)
-    process.communicate()
+    debug('Saving Subversion username "{}".'.format(username))
+    # Backup the ~/.subversion directory
+    backup_svn()
+    # Create the config files if they don't exist
+    create_svn_config()
 
     config = SafeConfigParser()
     config.read(SVN_SERVERS)
@@ -65,8 +105,6 @@ def save_svn_username(username):
         config.add_section('metofficesharedrepos')
     config.set('metofficesharedrepos', 'username', username)
     config.set('metofficesharedrepos', 'store-plaintext-passwords', 'no')
-    # Backup the ~/.subversion directory
-    backup(SVN_NAME)
     # Write the config
     with open(SVN_SERVERS, 'w') as config_file:
         config.write(config_file)
@@ -110,17 +148,33 @@ def svn_username_is_saved_in_auth(username):
         return False
     return True
 
-def save_svn_username_in_auth(username, url=SVN_URL):
+def remove_svn_auth():
+    """
+    Remove the Subversion auth file corresponding to the svn_key.
+    """
+    svn_key = get_svn_key()
+    svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
+    debug('Removing {}.'.format(svn_auth_path))
+    try:
+        if path.exists(svn_auth_path):
+            remove(svn_auth_path)
+    except OSError as exc:
+        warning('Removing {} failed.'.format(svn_auth_path))
+        for arg in exc.args[1:]:
+            info(arg)
+        raise AuthError
+
+def save_svn_username_in_auth(username):
     """
     Try svn info interactively with username and url.
     This will store the Subversion key and username.
     """
+    debug('Saving Subversion username "{}" in the auth directory.'.format(username))
     # Backup the ~/.subversion directory
-    if not path.exists(SVN_PATH):
-        mkdir(SVN_PATH, 0o700)
-    backup(SVN_NAME)
+    backup_svn()
     # Try svn info
     info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
+    url = SVN_URL
     process = Popen(
         ['svn', 'info', '--force-interactive', '--username', username, url],
         stdout=PIPE,
@@ -136,12 +190,17 @@ def save_svn_username_in_auth(username, url=SVN_URL):
     else:
         raise AuthError(unable_message, stdout)
 
-def check_svn_username_saved_in_auth(username):
+def check_svn_username_saved_in_auth(username, plaintext=False):
     """
     Check the realmstring and username saved by Subversion.
     Save the username if it is not already saved.
     """
+    if plaintext:
+        backup_svn()
+        remove_svn_auth()
     if not svn_username_is_saved_in_auth(username):
+        if plaintext:
+            save_svn_username(username)
         save_svn_username_in_auth(username)
         # Check again to ensure that username is consistent
         if not svn_username_is_saved_in_auth(username):
@@ -154,6 +213,7 @@ def save_svn_password(passwd):
     """
     Store the Subversion password in GPG agent
     """
+    debug("Saving the Subversion password.")
     key = get_svn_key()
     gpg.preset_passphrase(key, passwd)
 
@@ -161,6 +221,7 @@ def get_svn_password():
     """
     Ask GPG agent for the Subversion password
     """
+    debug("Getting the Subversion password.")
     key = get_svn_key()
     return gpg.get_passphrase(key)
 
@@ -172,7 +233,7 @@ def svn_password_is_cached():
         get_svn_password()
     except GPGError:
         # Password not in GPG
-        debug('Subversion password is not cached.')
+        debug('The Subversion password is not cached.')
         return False
     return True
 
