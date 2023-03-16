@@ -114,6 +114,7 @@ def check_gpg_agent_conf():
     """
     Check the user's GPG agent configuration and append any missing lines
     """
+    conf_updated = False
     gpg_agent_conf_allow_preset_passphrase = 'allow-preset-passphrase'
     gpg_agent_conf_max_cache_ttl = 'max-cache-ttl 43200'
 
@@ -122,6 +123,7 @@ def check_gpg_agent_conf():
     gnupg_dir_path = path.join(home, gnupg_dir_name)
     if not path.exists(gnupg_dir_path):
         mkdir(gnupg_dir_path, 0o700)
+        conf_updated = True
         debug('Created {}'.format(gnupg_dir_path))
     gpg_agent_conf_name = 'gpg-agent.conf'
     gpg_agent_conf_path = path.join(gnupg_dir_path, gpg_agent_conf_name)
@@ -130,9 +132,11 @@ def check_gpg_agent_conf():
         with open(gpg_agent_conf_path, 'w') as gpg_agent_conf_file:
             gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
+        conf_updated = True
         debug('Created {}'.format(gpg_agent_conf_path))
     else:
         # Check if gpg_agent.conf contains the line 'allow-preset-passphrase'
+        debug('Checking {}'.format(gpg_agent_conf_path))
         grep_command = Popen(
             ['grep', gpg_agent_conf_allow_preset_passphrase, gpg_agent_conf_path],
             stdout=PIPE)
@@ -141,6 +145,8 @@ def check_gpg_agent_conf():
             backup(gnupg_dir_name)
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
+            conf_updated = True
+            debug('Updated {}'.format(gpg_agent_conf_path))
         # Check if gpg_agent.conf contains the line 'max-cache-ttl 43200'
         grep_command = Popen(
             ['grep', gpg_agent_conf_max_cache_ttl, gpg_agent_conf_path],
@@ -150,12 +156,17 @@ def check_gpg_agent_conf():
             backup(gnupg_dir_name)
             with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
                 gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
-        debug('Checked and updated {}'.format(gpg_agent_conf_path))
+            conf_updated = True
+            debug('Updated {}'.format(gpg_agent_conf_path))
+    return conf_updated
 
 def start_gpg_agent():
     """
     Make sure that the agent is running
     """
-    check_gpg_agent_conf()
-    send('RELOADAGENT')
+    conf_updated = check_gpg_agent_conf()
+    command = (
+        'RELOADAGENT' if conf_updated else
+        'GETINFO version')
+    send(command)
     set_environ()
