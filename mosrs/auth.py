@@ -38,15 +38,23 @@ def request_credentials(username=None):
     passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
     return username, passwd
 
+PLAINTEXT_PASSWORD_MESSAGE = (
+    "Your current Subversion configuration for MOSRS permits plaintext passwords. "
+    "It will be changed so that only encrypted passwords are stored.")
+
 def request_and_save_credentials(rose_username=None, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
     # Ask for credentials
     username, passwd = request_credentials(svn_username)
+    # Check if the Subversion servers file allows plaintext passwords to be stored
+    plaintext = svn.svn_servers_stores_plaintext_passwords()
+    if plaintext:
+        warning(PLAINTEXT_PASSWORD_MESSAGE)
     # Check against the realmstring and username stored by Subversion.
     # Save the realmstring and username if not already saved.
-    if not svn.check_svn_username_saved_in_auth(username):
+    if not svn.check_svn_username_saved_in_auth(username, plaintext):
         raise AuthError
     # Check consistency of saved MOSRS usernames
     if (rose_username is not None and username != rose_username):
@@ -69,8 +77,8 @@ def update(rose_username, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
-    debug('MOSRS Rose username passed to update is {}.'.format(rose_username))
-    debug('MOSRS Subversion username passed to update is {}.'.format(svn_username))
+    debug('MOSRS Rose username passed to update is "{}".'.format(rose_username))
+    debug('MOSRS Subversion username passed to update is "{}".'.format(svn_username))
     if svn_username is None:
         svn_username = rose_username
     try:
@@ -108,14 +116,17 @@ def check_or_update():
     if rose_username is not None:
         debug('MOSRS username stored in Rose config is "{}".'.format(rose_username))
     svn_username = svn.get_svn_username()
-    if svn_username is not None:
-        debug('MOSRS username stored in Subversion servers file is "{}".'.format(svn_username))
-
     if svn_username is None:
         update(rose_username)
         return
+    debug('MOSRS username stored in Subversion servers file is "{}".'.format(svn_username))
+
+    # Check if the Subversion servers file allows plaintext passwords to be stored
+    plaintext = svn.svn_servers_stores_plaintext_passwords()
+    if plaintext:
+        warning(PLAINTEXT_PASSWORD_MESSAGE)
     # Check the realmstring and svn_username stored by Subversion
-    if not svn.check_svn_username_saved_in_auth(svn_username):
+    if not svn.check_svn_username_saved_in_auth(svn_username, plaintext):
         info('Try again.')
         update(rose_username)
         return
