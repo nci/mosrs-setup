@@ -28,17 +28,24 @@ from mosrs.exception import AuthError, GPGError
 from mosrs.message import debug, info, warning
 from . import gpg
 
-SVN_NAME = '.subversion'
-SVN_PATH = path.join(environ['HOME'], SVN_NAME)
-SVN_SERVERS = path.join(SVN_PATH, 'servers')
+SVN_BASENAME = '.subversion'
+SVN_DIR = path.join(environ['HOME'], SVN_BASENAME)
+SVN_SERVERS = path.join(SVN_DIR, 'servers')
 
 def backup_svn():
     """
-    Backup the ~/.subversion directory.
+    Backup the ~/.subversion directory
     """
-    if not path.exists(SVN_PATH):
-        mkdir(SVN_PATH, 0o700)
-    backup(SVN_NAME)
+    backup(SVN_BASENAME)
+
+def backup_or_mkdir_svn():
+    """
+    Backup or create the ~/.subversion directory
+    """
+    if path.exists(SVN_DIR):
+        backup_svn()
+    else:
+        mkdir(SVN_DIR, 0o700)
 
 def svn_servers_stores_plaintext_passwords():
     """
@@ -89,8 +96,9 @@ def save_svn_username(username):
     Add the Rose username & server settings to Subversion servers file
     """
     debug('Saving Subversion username "{}".'.format(username))
-    # Backup the ~/.subversion directory
-    backup_svn()
+    # Backup or create the ~/.subversion directory
+    backup_or_mkdir_svn()
+
     # Create the config files if they don't exist
     create_svn_config()
 
@@ -109,7 +117,7 @@ def save_svn_username(username):
     with open(SVN_SERVERS, 'w') as config_file:
         config.write(config_file)
 
-SVN_AUTH_DIR = path.join(SVN_PATH, 'auth', 'svn.simple')
+SVN_AUTH_DIR = path.join(SVN_DIR, 'auth', 'svn.simple')
 SVN_PREKEY = '<https://code.metoffice.gov.uk:443> Met Office Code'
 SVN_URL = 'https://code.metoffice.gov.uk/svn/test'
 
@@ -155,6 +163,8 @@ def remove_svn_auth():
     svn_key = get_svn_key()
     svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
     debug('Removing {}.'.format(svn_auth_path))
+    # Backup the ~/.subversion directory
+    backup_svn()
     try:
         if path.exists(svn_auth_path):
             remove(svn_auth_path)
@@ -196,7 +206,6 @@ def check_svn_username_saved_in_auth(username, plaintext=False):
     Save the username if it is not already saved.
     """
     if plaintext:
-        backup_svn()
         remove_svn_auth()
     if not svn_username_is_saved_in_auth(username):
         if plaintext:

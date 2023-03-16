@@ -71,6 +71,7 @@ def backup(path_name):
     full_backup_path = path.join(backup_path, path_name)
     if not path.exists(full_backup_path):
         # Backup the file or directory
+        debug('Backing up {}.'.format(path_name))
         process = Popen(
             ['rsync', '-a', '--no-o', '--no-g', full_path, backup_path],
             stdout=PIPE,

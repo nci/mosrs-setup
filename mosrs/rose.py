@@ -99,14 +99,26 @@ def get_rose_username():
         debug(unable_message)
         return None
 
-METOMI_DIR = path.join(environ['HOME'], '.metomi')
+METOMI_BASENAME = '.metomi'
+METOMI_DIR = path.join(environ['HOME'], METOMI_BASENAME)
 METOMI_ROSE_CONF = path.join(METOMI_DIR, 'rose.conf')
+
+def backup_or_mkdir_metomi():
+    """
+    Backup or create the ~/.metomi directory
+    """
+    if path.exists(METOMI_DIR):
+        backup(METOMI_BASENAME)
+    else:
+        mkdir(METOMI_DIR, 0o700)
 
 def save_rose_username(username):
     """
     Add the Rose username for prefix u to the Rose configuration file
     """
     debug('Saving MOSRS username "{}" to Rose config.'.format(username))
+    # Backup or create the ~/.metomi directory
+    backup_or_mkdir_metomi()
     config = SafeConfigParser()
     config.add_section('rosie-id')
     config.set('rosie-id', PREFIX_USERNAME_KEY, username)
@@ -118,11 +130,6 @@ def save_rose_username(username):
         # Remove spaces from " = " delimiter
         # Rose configuration examples do not use " = "
         config_str = config_file.read().replace(' = ', '=', 1)
-    # Create ~/.metomi directory if it does not exist
-    if not path.exists(METOMI_DIR):
-        mkdir(METOMI_DIR, 0o755)
-    # Backup the ~/.metomi directory
-    backup('.metomi')
     # Append the config string to the Rose configuration
     with open(METOMI_ROSE_CONF, 'a') as rose_conf_file:
         rose_conf_file.write(config_str)
