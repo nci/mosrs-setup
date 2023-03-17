@@ -180,8 +180,8 @@ def save_svn_username_in_auth(username):
     This will store the Subversion key and username.
     """
     debug('Saving Subversion username "{}" in the auth directory.'.format(username))
-    # Backup the ~/.subversion directory
-    backup_svn()
+    # Backup or create the ~/.subversion directory
+    backup_or_mkdir_svn()
     # Try svn info
     info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
     url = SVN_URL
