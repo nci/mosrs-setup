@@ -17,9 +17,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import ConfigParser
-from ConfigParser import SafeConfigParser
-import io
 from os import environ, mkdir, path
 from subprocess import Popen, PIPE
 
@@ -61,44 +58,6 @@ def check_rose():
         todo('Please ensure that the correct modules are loaded.')
         raise
 
-PREFIX_USERNAME_KEY = 'prefix-username.u'
-
-def get_rose_username():
-    """
-    Get the MOSRS username from the Rosie configuration for prefix u
-    """
-    unable_message = 'Unable to retrieve MOSRS username from Rose config.'
-    try:
-        rose_config = Popen(
-            ['rose', 'config'],
-            stdout=PIPE,
-            stderr=PIPE)
-        grep_prefix = Popen(
-            ['grep', '^ *{} *='.format(PREFIX_USERNAME_KEY)],
-            stdin=rose_config.stdout,
-            stdout=PIPE,
-            stderr=PIPE)
-        rose_config.stdout.close()
-        stdout, stderr = grep_prefix.communicate()
-    except OSError as exc:
-        warning(unable_message)
-        for arg in exc.args:
-            debug(arg)
-        raise AuthError
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
-    if not (grep_prefix.returncode == 0 and PREFIX_USERNAME_KEY in stdout):
-        debug(unable_message)
-        return None
-    rose_username_def = '[rosie-id]\n' + stdout
-    config = SafeConfigParser()
-    config.readfp(io.BytesIO(rose_username_def))
-    try:
-        return config.get('rosie-id', PREFIX_USERNAME_KEY)
-    except ConfigParser.Error:
-        debug(unable_message)
-        return None
-
 METOMI_BASENAME = '.metomi'
 METOMI_DIR = path.join(environ['HOME'], METOMI_BASENAME)
 METOMI_ROSE_CONF = path.join(METOMI_DIR, 'rose.conf')
@@ -112,6 +71,33 @@ def backup_or_mkdir_metomi():
     else:
         mkdir(METOMI_DIR, 0o700)
 
+ROSIE_ID_SECTION = 'rosie-id'
+PREFIX_USERNAME_KEY = 'prefix-username.u'
+
+def get_rose_username():
+    """
+    Get the MOSRS username from the Rosie configuration for prefix u
+    """
+    unable_message = 'Unable to retrieve MOSRS username from Rose config.'
+    try:
+        rose_config = Popen(
+            ['rose', 'config', ROSIE_ID_SECTION, PREFIX_USERNAME_KEY],
+            stdout=PIPE,
+            stderr=PIPE)
+        stdout, stderr = rose_config.communicate()
+    except OSError as exc:
+        warning(unable_message)
+        for arg in exc.args:
+            debug(arg)
+        raise AuthError
+    stdout = '' if stdout is None else stdout
+    stderr = '' if stderr is None else stderr
+    if rose_config.returncode != 0:
+        debug(unable_message)
+        debug(stderr)
+        return None
+    return stdout.strip()
+
 def save_rose_username(username):
     """
     Add the Rose username for prefix u to the Rose configuration file
@@ -119,20 +105,46 @@ def save_rose_username(username):
     debug('Saving MOSRS username "{}" to Rose config.'.format(username))
     # Backup or create the ~/.metomi directory
     backup_or_mkdir_metomi()
-    config = SafeConfigParser()
-    config.add_section('rosie-id')
-    config.set('rosie-id', PREFIX_USERNAME_KEY, username)
-    # Write the config to a string
-    with io.BytesIO() as config_file:
-        config.write(config_file)
-        # Wind back the file to read it
-        config_file.seek(0)
-        # Remove spaces from " = " delimiter
-        # Rose configuration examples do not use " = "
-        config_str = config_file.read().replace(' = ', '=', 1)
+    config_str = '[{}]\n{}={}'.format(
+        ROSIE_ID_SECTION,
+        PREFIX_USERNAME_KEY,
+        username)
+    unable_message = 'Unable to save MOSRS username to Rose config.'
     # Append the config string to the Rose configuration
-    with open(METOMI_ROSE_CONF, 'a') as rose_conf_file:
-        rose_conf_file.write(config_str)
+    try:
+        with open(METOMI_ROSE_CONF, 'a') as rose_conf_file:
+            rose_conf_file.write(config_str)
+    except IOError as exc:
+        warning(unable_message)
+        for arg in exc.args:
+            debug(arg)
+        raise AuthError
+    try:
+        rose_config = Popen(
+            ['rose', 'config', '--print-ignored', '--file', METOMI_ROSE_CONF],
+            stdout=PIPE,
+            stderr=PIPE)
+        stdout, stderr = rose_config.communicate()
+    except OSError as exc:
+        warning(unable_message)
+        for arg in exc.args:
+            debug(arg)
+        raise AuthError
+    stdout = '' if stdout is None else stdout
+    stderr = '' if stderr is None else stderr
+    if rose_config.returncode != 0:
+        warning(unable_message)
+        debug(stderr)
+        raise AuthError
+    # Write stdout to the Rose configuration
+    try:
+        with open(METOMI_ROSE_CONF, 'w') as rose_conf_file:
+            rose_conf_file.write(stdout)
+    except IOError as exc:
+        warning(unable_message)
+        for arg in exc.args:
+            debug(arg)
+        raise AuthError
 
 ROSE_KEY = 'rosie:https:code.metoffice.gov.uk'
 
