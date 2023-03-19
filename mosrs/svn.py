@@ -36,16 +36,9 @@ def backup_svn():
     """
     Backup the ~/.subversion directory
     """
-    backup(SVN_BASENAME)
-
-def backup_or_mkdir_svn():
-    """
-    Backup or create the ~/.subversion directory
-    """
-    if path.exists(SVN_DIR):
-        backup_svn()
-    else:
+    if not path.exists(SVN_DIR):
         mkdir(SVN_DIR, 0o700)
+    backup(SVN_BASENAME)
 
 def svn_servers_stores_plaintext_passwords():
     """
@@ -96,8 +89,8 @@ def save_svn_username(username):
     Add the Rose username & server settings to Subversion servers file
     """
     debug('Saving Subversion username "{}".'.format(username))
-    # Backup or create the ~/.subversion directory
-    backup_or_mkdir_svn()
+    # Backup the ~/.subversion directory
+    backup_svn()
 
     # Create the config files if they don't exist
     create_svn_config()
@@ -180,8 +173,8 @@ def save_svn_username_in_auth(username):
     This will store the Subversion key and username.
     """
     debug('Saving Subversion username "{}" in the auth directory.'.format(username))
-    # Backup or create the ~/.subversion directory
-    backup_or_mkdir_svn()
+    # Backup the ~/.subversion directory
+    backup_svn()
     # Try svn info
     info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
     url = SVN_URL

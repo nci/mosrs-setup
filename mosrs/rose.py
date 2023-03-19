@@ -62,14 +62,13 @@ METOMI_BASENAME = '.metomi'
 METOMI_DIR = path.join(environ['HOME'], METOMI_BASENAME)
 METOMI_ROSE_CONF = path.join(METOMI_DIR, 'rose.conf')
 
-def backup_or_mkdir_metomi():
+def backup_metomi():
     """
-    Backup or create the ~/.metomi directory
+    Backup the ~/.metomi directory
     """
-    if path.exists(METOMI_DIR):
-        backup(METOMI_BASENAME)
-    else:
+    if not path.exists(METOMI_DIR):
         mkdir(METOMI_DIR, 0o700)
+    backup(METOMI_BASENAME)
 
 ROSIE_ID_SECTION = 'rosie-id'
 PREFIX_USERNAME_KEY = 'prefix-username.u'
@@ -103,8 +102,8 @@ def save_rose_username(username):
     Add the Rose username for prefix u to the Rose configuration file
     """
     debug('Saving MOSRS username "{}" to Rose config.'.format(username))
-    # Backup or create the ~/.metomi directory
-    backup_or_mkdir_metomi()
+    # Backup the ~/.metomi directory
+    backup_metomi()
     config_str = '[{}]\n{}={}'.format(
         ROSIE_ID_SECTION,
         PREFIX_USERNAME_KEY,
