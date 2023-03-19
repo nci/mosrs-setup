@@ -117,6 +117,8 @@ def backup_gnupg():
     """
     Backup the ~/.gnupg directory
     """
+    if not path.exists(GNUPG_DIR):
+        mkdir(GNUPG_DIR, 0o700)
     backup(GNUPG_BASENAME)
 
 def mkdir_gnupg():
