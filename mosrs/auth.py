@@ -62,7 +62,7 @@ def request_and_save_credentials(rose_username=None, svn_username=None):
         rose.todo_check_rose_username()
         raise AuthError
     # Save credentials
-    svn.save_svn_username(username)
+    svn.save_svn_username(username, plaintext)
     try:
         rose.save_rose_password(passwd)
         svn.save_svn_password(passwd)
