@@ -84,10 +84,19 @@ def get_svn_username():
         debug('Unable to retrieve MOSRS username from Subversion servers file.')
         return None
 
-def save_svn_username(username):
+def save_svn_username(username, plaintext=False):
     """
     Add the Rose username & server settings to Subversion servers file
     """
+
+    debug('Checking to see if Subversion servers file needs to be changed.')
+    # Check to see if the Subversion servers file needs to be changed
+    if not plaintext:
+        old_username = get_svn_username()
+        if old_username == username:
+            debug('The Subversion servers file does not need to be changed.')
+            return
+
     debug('Saving Subversion username "{}".'.format(username))
     # Backup the ~/.subversion directory
     backup_svn()
@@ -202,7 +211,7 @@ def check_svn_username_saved_in_auth(username, plaintext=False):
         remove_svn_auth()
     if not svn_username_is_saved_in_auth(username):
         if plaintext:
-            save_svn_username(username)
+            save_svn_username(username, plaintext)
         save_svn_username_in_auth(username)
         # Check again to ensure that username is consistent
         if not svn_username_is_saved_in_auth(username):
