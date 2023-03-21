@@ -32,13 +32,13 @@ def get_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    stdout = send('GET_PASSPHRASE --no-ask --data {} X X X\n'.format(cache_id))
+    stdout = send(f'GET_PASSPHRASE --no-ask --data {cache_id} X X X\n')
     try:
         result = unquote(stdout[0][2:])
     except IndexError as exc:
         index_error_str = 'get_passphrase: IndexError'
         if stdout:
-            debug(index_error_str + ': len(stdout[0]) == {}'.format(len(stdout[0])))
+            debug(f'{index_error_str}: len(stdout[0]) == {len(stdout[0])}')
         else:
             debug(index_error_str + ': stdout is empty.')
         raise GPGError(index_error_str) from exc
@@ -50,7 +50,7 @@ def clear_passphrase(cache_id):
 
     https://www.gnupg.org/documentation/manuals/gnupg/Agent-GET_005fPASSPHRASE.html
     """
-    send('CLEAR_PASSPHRASE {}\n'.format(cache_id))
+    send(f'CLEAR_PASSPHRASE {cache_id}\n')
 
 def preset_passphrase(keygrip, passphrase):
     """
@@ -61,10 +61,7 @@ def preset_passphrase(keygrip, passphrase):
     # Only -1 is allowed for timeout
     timeout = -1
     hex_passphrase = passphrase.encode().hex()
-    send('PRESET_PASSPHRASE {} {} {}\n'.format(
-        keygrip,
-        timeout,
-        hex_passphrase))
+    send(f'PRESET_PASSPHRASE {keygrip} {timeout} {hex_passphrase}\n')
 
 def send(message):
     """
@@ -80,7 +77,7 @@ def send(message):
         if agent.returncode != 0:
             raise GPGError(
                 'gpg.send:',
-                'Could not connect to gpg-agent:\n{}'.format(stderr))
+                f'Could not connect to gpg-agent:\n{stderr}')
         check_return(stdout)
         return stdout.split('\n')[0:-2]
 
@@ -150,10 +147,10 @@ def check_gpg_agent_conf():
             gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
         conf_updated = True
-        debug('Created {}'.format(gpg_agent_conf_path))
+        debug(f'Created {gpg_agent_conf_path}')
     else:
         # Check if gpg_agent.conf contains the line 'allow-preset-passphrase'
-        debug('Checking {}'.format(gpg_agent_conf_path))
+        debug(f'Checking {gpg_agent_conf_path}')
         with Popen(
             ['grep', gpg_agent_conf_allow_preset_passphrase, gpg_agent_conf_path],
             stdout=PIPE) as grep_command:
@@ -164,7 +161,7 @@ def check_gpg_agent_conf():
                 with open(gpg_agent_conf_path, 'a', encoding=ENCODING) as gpg_agent_conf_file:
                     gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
                 conf_updated = True
-                debug('Updated {}'.format(gpg_agent_conf_path))
+                debug(f'Updated {gpg_agent_conf_path}')
         # Check if gpg_agent.conf contains the line 'max-cache-ttl 43200'
         with Popen(
             ['grep', gpg_agent_conf_max_cache_ttl, gpg_agent_conf_path],
@@ -176,7 +173,7 @@ def check_gpg_agent_conf():
                 with open(gpg_agent_conf_path, 'a', encoding=ENCODING) as gpg_agent_conf_file:
                     gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
                 conf_updated = True
-                debug('Updated {}'.format(gpg_agent_conf_path))
+                debug(f'Updated {gpg_agent_conf_path}')
     return conf_updated
 
 def start_gpg_agent():

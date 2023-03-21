@@ -32,7 +32,7 @@ def prompt_or_default(prompt, default):
 
     Returns: answer or default
     """
-    response = input('{} [{}]: '.format(prompt, default)).strip()
+    response = input(f'{prompt} [{default}]: ').strip()
     if response == '':
         response = default
     return response
@@ -93,10 +93,9 @@ def main():
         return
 
     package_version = version.version()
-    package_version_message = 'mosrs-setup version {}'.format(package_version)
+    package_version_message = f'mosrs-setup version {package_version}'
     package_description = (
-        '{}: Set up MOSRS authentication for Rose and Subversion'.format(
-            package_version_message))
+        f'{package_version_message}: Set up MOSRS authentication for Rose and Subversion')
     parser = argparse.ArgumentParser(description=package_description)
     parser.add_argument(
         '--debug',

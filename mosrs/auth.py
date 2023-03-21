@@ -35,7 +35,7 @@ def request_credentials(username=None):
     info('You need to enter your MOSRS credentials here so that GPG can cache your password.')
     if username is None:
         username = input('Please enter your MOSRS username: ')
-    passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
+    passwd = getpass(f'Please enter the MOSRS password for {username}: ')
     return username, passwd
 
 PLAINTEXT_PASSWORD_MESSAGE = (
@@ -77,8 +77,8 @@ def update(rose_username, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
-    debug('MOSRS Rose username passed to update is "{}".'.format(rose_username))
-    debug('MOSRS Subversion username passed to update is "{}".'.format(svn_username))
+    debug(f'MOSRS Rose username passed to update is "{rose_username}".')
+    debug(f'MOSRS Subversion username passed to update is "{svn_username}".')
     if svn_username is None:
         svn_username = rose_username
     try:
@@ -114,12 +114,12 @@ def check_or_update():
     """
     rose_username = rose.get_rose_username()
     if rose_username is not None:
-        debug('MOSRS username stored in Rose config is "{}".'.format(rose_username))
+        debug(f'MOSRS username stored in Rose config is "{rose_username}".')
     svn_username = svn.get_svn_username()
     if svn_username is None:
         update(rose_username)
         return
-    debug('MOSRS username stored in Subversion servers file is "{}".'.format(svn_username))
+    debug(f'MOSRS username stored in Subversion servers file is "{svn_username}".')
 
     # Check if the Subversion servers file allows plaintext passwords to be stored
     plaintext = svn.svn_servers_stores_plaintext_passwords()
@@ -184,10 +184,9 @@ def main():
         return
 
     package_version = version.version()
-    package_version_message = 'mosrs-auth version {}'.format(package_version)
+    package_version_message = f'mosrs-auth version {package_version}'
     package_description = (
-        '{}: cache password to MOSRS for Rose and Subversion'.format(
-            package_version_message))
+        f'{package_version_message}: cache password to MOSRS for Rose and Subversion')
     parser = argparse.ArgumentParser(description=package_description)
     parser.add_argument(
         '--debug',

@@ -33,5 +33,5 @@ def is_connected():
         stderr=PIPE) as process:
         process.communicate()
         if process.returncode != 0:
-            debug('wget {} returned {}'.format(MOSRS_URL, process.returncode))
+            debug(f'wget {MOSRS_URL} returned {process.returncode}')
         return process.returncode == 0

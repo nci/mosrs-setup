@@ -61,7 +61,7 @@ def svn_servers_stores_plaintext_passwords():
     if not config.has_section('metofficesharedrepos'):
         return False
     plaintext = config.get('metofficesharedrepos', 'store-plaintext-passwords')
-    debug('store-plaintext-passwords == "{}"'.format(plaintext))
+    debug(f'store-plaintext-passwords == "{plaintext}"')
     return plaintext != 'no'
 
 def create_svn_config():
@@ -98,7 +98,7 @@ def save_svn_username(username, plaintext=False):
             debug('The Subversion servers file does not need to be changed.')
             return
 
-    debug('Saving Subversion username "{}".'.format(username))
+    debug(f'Saving Subversion username "{username}".')
     # Backup the ~/.subversion directory
     backup_svn()
 
@@ -136,7 +136,7 @@ def svn_username_is_saved_in_auth(username):
     Check that the Subversion key and username are already stored
     """
     debug(
-        'Checking that MOSRS username "{}" is stored in the Subversion auth dir.'.format(username))
+        f'Checking that MOSRS username "{username}" is stored in the Subversion auth dir.')
     svn_key = get_svn_key()
     svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
     with Popen(
@@ -145,7 +145,7 @@ def svn_username_is_saved_in_auth(username):
         stderr=PIPE) as grep_prekey:
         _ignore, stderr = communicate(grep_prekey)
         if grep_prekey.returncode != 0:
-            debug('grep "{}" failed with:'.format(SVN_PREKEY))
+            debug(f'grep "{SVN_PREKEY}" failed with:')
             debug(stderr)
             return False
     with Popen(
@@ -154,7 +154,7 @@ def svn_username_is_saved_in_auth(username):
         stderr=PIPE) as grep_username:
         _ignore, stderr = communicate(grep_username)
         if grep_username.returncode != 0:
-            debug('grep "{}" failed with:'.format(username))
+            debug(f'grep "{username}" failed with:')
             debug(stderr)
             return False
     return True
@@ -165,14 +165,14 @@ def remove_svn_auth():
     """
     svn_key = get_svn_key()
     svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
-    debug('Removing {}.'.format(svn_auth_path))
+    debug(f'Removing {svn_auth_path}.')
     # Backup the ~/.subversion directory
     backup_svn()
     try:
         if path.exists(svn_auth_path):
             remove(svn_auth_path)
     except OSError as exc:
-        warning('Removing {} failed.'.format(svn_auth_path))
+        warning(f'Removing {svn_auth_path} failed.')
         for arg in exc.args[1:]:
             info(arg)
         raise AuthError from exc
@@ -182,7 +182,7 @@ def save_svn_username_in_auth(username):
     Try svn info interactively with username and url.
     This will store the Subversion key and username.
     """
-    debug('Saving Subversion username "{}" in the auth directory.'.format(username))
+    debug(f'Saving Subversion username "{username}" in the auth directory.')
     # Backup the ~/.subversion directory
     backup_svn()
     # Try svn info
@@ -194,7 +194,7 @@ def save_svn_username_in_auth(username):
         stderr=PIPE) as process:
         stdout, stderr = communicate(process)
         unable_message = (
-            'Unable to access {} via Subversion interactively with your credentials:'.format(url))
+            f'Unable to access {url} via Subversion interactively with your credentials:')
         if process.returncode != 0:
             raise AuthError(unable_message, stderr)
         if 'Path:' in stdout:
@@ -216,7 +216,7 @@ def check_svn_username_saved_in_auth(username, plaintext=False):
         # Check again to ensure that username is consistent
         if not svn_username_is_saved_in_auth(username):
             warning(
-                'The username "{}" does not match your saved MOSRS credentials.'.format(username))
+                f'The username "{username}" does not match your saved MOSRS credentials.')
             return False
     return True
 
@@ -258,7 +258,7 @@ def check_svn_credentials(url=SVN_URL):
         stdout=PIPE,
         stderr=PIPE) as process:
         stdout, stderr = communicate(process)
-        unable_message = 'Unable to access {} via Subversion with your credentials:'.format(url)
+        unable_message = f'Unable to access {url} via Subversion with your credentials:'
         if process.returncode != 0:
             raise AuthError(unable_message, stderr)
         stdout = '' if stdout is None else stdout

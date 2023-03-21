@@ -40,7 +40,7 @@ def rose_is_found():
             stderr=PIPE) as command:
             _ignore, stderr = communicate(command)
             if command.returncode != 0:
-                debug('{} {}'.format(ROSE_UNABLE_MESSAGE, stderr))
+                debug(f'{ROSE_UNABLE_MESSAGE} {stderr}')
             return command.returncode == 0
     except OSError as exc:
         raise AuthError(*(exc.args)) from exc
@@ -98,17 +98,14 @@ def save_rose_username(username):
     """
     Add the Rose username for prefix u to the Rose configuration file
     """
-    debug('Saving MOSRS username "{}" to Rose config.'.format(username))
+    debug(f'Saving MOSRS username "{username}" to Rose config.')
     # Backup the ~/.metomi directory
     backup_metomi()
-    config_str = '[{}]\n{}={}'.format(
-        ROSIE_ID_SECTION,
-        PREFIX_USERNAME_KEY,
-        username)
     unable_message = 'Unable to save MOSRS username to Rose config.'
     # Append the config string to the Rose configuration
     try:
         with open(METOMI_ROSE_CONF, 'a', encoding=ENCODING) as rose_conf_file:
+            config_str = f'[{ROSIE_ID_SECTION}]\n{PREFIX_USERNAME_KEY,}={username}'
             rose_conf_file.write(config_str)
     except IOError as exc:
         warning(unable_message)
@@ -172,11 +169,11 @@ def check_rose_credentials(username, prefix='u'):
     """
     info('Checking your credentials using rosie. Please wait.')
     with Popen(
-        ['rosie', 'hello', '--prefix={}'.format(prefix)],
+        ['rosie', 'hello', f'--prefix={prefix}'],
         stdout=PIPE,
         stderr=PIPE) as process:
         stdout, stderr = communicate(process)
-        unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
+        unable_message = f'Unable to access rosie prefix {prefix} with your credentials:'
         if process.returncode != 0:
             raise AuthError(unable_message, stderr)
         stdout = '' if stdout is None else stdout
@@ -189,4 +186,4 @@ def todo_check_rose_username():
     """
     Print a todo message
     """
-    todo('Check {} in {}.'.format(PREFIX_USERNAME_KEY, METOMI_ROSE_CONF))
+    todo(f'Check {PREFIX_USERNAME_KEY} in {METOMI_ROSE_CONF}.')

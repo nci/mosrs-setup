@@ -44,22 +44,22 @@ def debug(text):
     Print a debug message
     """
     if debugging:
-        print('{}: {}'.format(colour('DBUG', 'magenta'), text))
+        print(f'{colour("DBUG", "magenta")}: {text}')
 
 def info(text):
     """
     Print an information message
     """
-    print('{}: {}'.format(colour('INFO', 'blue'), text))
+    print(f'{colour("INFO", "blue")}: {text}')
 
 def todo(text):
     """
     Print a todo message
     """
-    print('{}: {}'.format(colour('TODO', 'green'), text))
+    print(f'{colour("TODO", "green")}: {text}')
 
 def warning(text):
     """
     Print a warning message
     """
-    print('{}: {}'.format(colour('WARN', 'red'), text))
+    print(f'{colour("WARN", "red")}: {text}')
