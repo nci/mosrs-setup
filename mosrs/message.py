@@ -16,8 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import print_function
-
 from mosrs.exception import MessageError
 
 debugging = False # pylint: disable=C0103
