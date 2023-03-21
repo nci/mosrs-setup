@@ -104,7 +104,7 @@ def save_rose_username(username):
     # Append the config string to the Rose configuration
     try:
         with open(METOMI_ROSE_CONF, 'a', encoding=ENCODING) as rose_conf_file:
-            config_str = f'[{ROSIE_ID_SECTION}]\n{PREFIX_USERNAME_KEY,}={username}'
+            config_str = f'[{ROSIE_ID_SECTION}]\n{PREFIX_USERNAME_KEY}={username}'
             rose_conf_file.write(config_str)
     except IOError as exc:
         warning(unable_message)
