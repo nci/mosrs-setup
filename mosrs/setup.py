@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 Copyright 2016 ARC Centre of Excellence for Climate Systems Science
 
@@ -32,7 +32,7 @@ def prompt_or_default(prompt, default):
 
     Returns: answer or default
     """
-    response = raw_input('{} [{}]: '.format(prompt, default)).strip()
+    response = input('{} [{}]: '.format(prompt, default)).strip()
     if response == '':
         response = default
     return response
@@ -44,7 +44,7 @@ def check_rose():
     try:
         rose.check_rose()
     except AuthError as exc:
-        raise SetupError(*(exc.args))
+        raise SetupError(*(exc.args)) from exc
 
 def setup_mosrs_account():
     """
@@ -56,7 +56,7 @@ def setup_mosrs_account():
         warning('GPGError in setup_mosrs_account:')
         for arg in exc.args:
             info(arg)
-        raise
+        raise GPGError from exc
 
     # Save account details and cache credentials
     mosrs_request = None
@@ -66,14 +66,14 @@ def setup_mosrs_account():
     if mosrs_request.startswith('y'):
         try:
             auth.check_or_update()
-        except AuthError:
+        except AuthError as exc:
             warning('Authentication check and update failed.')
             todo(dedent(
                 """
                 Please check your credentials. If you have recently reset your password
                 it may take a bit of time for the server to recognise the new password.
                 """))
-            raise SetupError
+            raise SetupError from exc
     else:
         todo(dedent(
             """
@@ -131,8 +131,6 @@ def main():
             setup_mosrs_account()
         except GPGError:
             return
-        except SetupError:
-            raise
     except SetupError:
         todo('Once this has been done please run this setup script again.')
     else:

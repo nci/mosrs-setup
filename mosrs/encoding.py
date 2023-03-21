@@ -17,21 +17,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from subprocess import Popen, PIPE
+ENCODING = 'UTF-8'
 
-from mosrs.message import debug
-
-MOSRS_URL = 'https://code.metoffice.gov.uk'
-
-def is_connected():
+def decode(bytes_obj):
     """
-    Check that the network is connected
+    Decode a bytes object using ENCODING
     """
-    with Popen(
-        ['wget', '-q', '-O', '/dev/null', MOSRS_URL],
-        stdout=PIPE,
-        stderr=PIPE) as process:
-        process.communicate()
-        if process.returncode != 0:
-            debug('wget {} returned {}'.format(MOSRS_URL, process.returncode))
-        return process.returncode == 0
+    return (
+        '' if bytes_obj is None else
+        bytes_obj.decode(ENCODING))
+
+def communicate(process, message=None):
+    """
+    Decode the results of process.communicate using ENCODING
+    """
+    message_bytes = None if message is None else message.encode()
+    stdout_bytes, stderr_bytes = process.communicate(message_bytes)
+    stdout = decode(stdout_bytes)
+    stderr = decode(stderr_bytes)
+    return stdout, stderr

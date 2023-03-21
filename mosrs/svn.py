@@ -17,13 +17,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import ConfigParser
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
+from configparser import Error as ConfigParserError
 from hashlib import md5
 from os import environ, mkdir, path, remove
 from subprocess import Popen, PIPE
 
 from mosrs.backup import backup
+from mosrs.encoding import communicate, ENCODING
 from mosrs.exception import AuthError, GPGError
 from mosrs.message import debug, info, warning
 from . import gpg
@@ -51,7 +52,7 @@ def svn_servers_stores_plaintext_passwords():
     try:
         config = SafeConfigParser()
         config.read(SVN_SERVERS)
-    except ConfigParser.Error:
+    except ConfigParserError:
         debug('Unable to check Subversion servers file.')
         return False
 
@@ -61,16 +62,16 @@ def svn_servers_stores_plaintext_passwords():
         return False
     plaintext = config.get('metofficesharedrepos', 'store-plaintext-passwords')
     debug('store-plaintext-passwords == "{}"'.format(plaintext))
-    return False if plaintext == 'no' else True
+    return plaintext != 'no'
 
 def create_svn_config():
     """
     Run 'svn help' to create the Subversion config files if they don't exist
     """
-    process = Popen(
-        ['svn', 'help'],
-        stdout=PIPE)
-    process.communicate()
+    with Popen(
+            ['svn', 'help'],
+        stdout=PIPE) as process:
+        communicate(process)
 
 def get_svn_username():
     """
@@ -80,7 +81,7 @@ def get_svn_username():
         config = SafeConfigParser()
         config.read(SVN_SERVERS)
         return config.get('metofficesharedrepos', 'username')
-    except ConfigParser.Error:
+    except ConfigParserError:
         debug('Unable to retrieve MOSRS username from Subversion servers file.')
         return None
 
@@ -116,7 +117,7 @@ def save_svn_username(username, plaintext=False):
     config.set('metofficesharedrepos', 'username', username)
     config.set('metofficesharedrepos', 'store-plaintext-passwords', 'no')
     # Write the config
-    with open(SVN_SERVERS, 'w') as config_file:
+    with open(SVN_SERVERS, 'w', encoding=ENCODING) as config_file:
         config.write(config_file)
 
 SVN_AUTH_DIR = path.join(SVN_DIR, 'auth', 'svn.simple')
@@ -128,7 +129,7 @@ def get_svn_key():
     Use the hexdigest of the md5 hash of
     the Subversion URL as the svn key
     """
-    return md5(SVN_PREKEY).hexdigest()
+    return md5(SVN_PREKEY.encode()).hexdigest()
 
 def svn_username_is_saved_in_auth(username):
     """
@@ -138,24 +139,24 @@ def svn_username_is_saved_in_auth(username):
         'Checking that MOSRS username "{}" is stored in the Subversion auth dir.'.format(username))
     svn_key = get_svn_key()
     svn_auth_path = path.join(SVN_AUTH_DIR, svn_key)
-    grep_prekey = Popen(
+    with Popen(
         ['grep', SVN_PREKEY, svn_auth_path],
         stdout=PIPE,
-        stderr=PIPE)
-    _stdout, stderr = grep_prekey.communicate()
-    if grep_prekey.returncode != 0:
-        debug('grep "{}" failed with:'.format(SVN_PREKEY))
-        debug(stderr)
-        return False
-    grep_username = Popen(
+        stderr=PIPE) as grep_prekey:
+        _ignore, stderr = communicate(grep_prekey)
+        if grep_prekey.returncode != 0:
+            debug('grep "{}" failed with:'.format(SVN_PREKEY))
+            debug(stderr)
+            return False
+    with Popen(
         ['grep', username, svn_auth_path],
         stdout=PIPE,
-        stderr=PIPE)
-    _stdout, stderr = grep_username.communicate()
-    if grep_username.returncode != 0:
-        debug('grep "{}" failed with:'.format(username))
-        debug(stderr)
-        return False
+        stderr=PIPE) as grep_username:
+        _ignore, stderr = communicate(grep_username)
+        if grep_username.returncode != 0:
+            debug('grep "{}" failed with:'.format(username))
+            debug(stderr)
+            return False
     return True
 
 def remove_svn_auth():
@@ -174,7 +175,7 @@ def remove_svn_auth():
         warning('Removing {} failed.'.format(svn_auth_path))
         for arg in exc.args[1:]:
             info(arg)
-        raise AuthError
+        raise AuthError from exc
 
 def save_svn_username_in_auth(username):
     """
@@ -187,20 +188,19 @@ def save_svn_username_in_auth(username):
     # Try svn info
     info('You need to enter your MOSRS credentials here so that Subversion can save your username.')
     url = SVN_URL
-    process = Popen(
+    with Popen(
         ['svn', 'info', '--force-interactive', '--username', username, url],
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, stderr = process.communicate()
-    unable_message = (
-        'Unable to access {} via Subversion interactively with your credentials:'.format(url))
-    if process.returncode != 0:
-        raise AuthError(unable_message, stderr)
-    stdout = '' if stdout is None else stdout
-    if 'Path:' in stdout:
-        debug('Successfully accessed Subversion interactively with your credentials.')
-    else:
-        raise AuthError(unable_message, stdout)
+        stderr=PIPE) as process:
+        stdout, stderr = communicate(process)
+        unable_message = (
+            'Unable to access {} via Subversion interactively with your credentials:'.format(url))
+        if process.returncode != 0:
+            raise AuthError(unable_message, stderr)
+        if 'Path:' in stdout:
+            debug('Successfully accessed Subversion interactively with your credentials.')
+        else:
+            raise AuthError(unable_message, stdout)
 
 def check_svn_username_saved_in_auth(username, plaintext=False):
     """
@@ -253,16 +253,16 @@ def check_svn_credentials(url=SVN_URL):
     Try subversion info with url to make sure that the cached password is working
     """
     info('Checking your credentials using Subversion. Please wait.')
-    process = Popen(
+    with Popen(
         ['svn', 'info', '--non-interactive', url],
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, stderr = process.communicate()
-    unable_message = 'Unable to access {} via Subversion with your credentials:'.format(url)
-    if process.returncode != 0:
-        raise AuthError(unable_message, stderr)
-    stdout = '' if stdout is None else stdout
-    if 'Path:' in stdout:
-        info('Successfully accessed Subversion with your credentials.')
-    else:
-        raise AuthError(unable_message, stdout)
+        stderr=PIPE) as process:
+        stdout, stderr = communicate(process)
+        unable_message = 'Unable to access {} via Subversion with your credentials:'.format(url)
+        if process.returncode != 0:
+            raise AuthError(unable_message, stderr)
+        stdout = '' if stdout is None else stdout
+        if 'Path:' in stdout:
+            info('Successfully accessed Subversion with your credentials.')
+        else:
+            raise AuthError(unable_message, stdout)

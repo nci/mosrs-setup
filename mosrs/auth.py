@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
@@ -34,7 +34,7 @@ def request_credentials(username=None):
     """
     info('You need to enter your MOSRS credentials here so that GPG can cache your password.')
     if username is None:
-        username = raw_input('Please enter your MOSRS username: ')
+        username = input('Please enter your MOSRS username: ')
     passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
     return username, passwd
 
@@ -70,7 +70,7 @@ def request_and_save_credentials(rose_username=None, svn_username=None):
         warning('Saving credentials failed.')
         for arg in exc.args:
             debug(arg)
-        raise AuthError
+        raise AuthError from exc
     return username
 
 def update(rose_username, svn_username=None):
@@ -173,7 +173,7 @@ def start_gpg_agent():
         warning('GPGError in start_gpg_agent:')
         for arg in exc.args:
             info(arg)
-        raise AuthError
+        raise AuthError from exc
 
 def main():
     """

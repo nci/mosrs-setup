@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
@@ -21,6 +21,7 @@ from os import environ, mkdir, path
 from subprocess import Popen, PIPE
 
 from mosrs.backup import backup
+from mosrs.encoding import communicate, ENCODING
 from mosrs.exception import AuthError, GPGError
 from mosrs.message import debug, info, warning, todo
 from . import gpg
@@ -33,18 +34,16 @@ def rose_is_found():
     """
     debug('Checking the rose command.')
     try:
-        command = Popen(
+        with Popen(
             ['which', 'rose'],
             stdout=PIPE,
-            stderr=PIPE)
-        stdout, stderr = command.communicate()
+            stderr=PIPE) as command:
+            _ignore, stderr = communicate(command)
+            if command.returncode != 0:
+                debug('{} {}'.format(ROSE_UNABLE_MESSAGE, stderr))
+            return command.returncode == 0
     except OSError as exc:
-        raise AuthError(*(exc.args))
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
-    if command.returncode != 0:
-        debug('{} {}'.format(ROSE_UNABLE_MESSAGE, stderr))
-    return command.returncode == 0
+        raise AuthError(*(exc.args)) from exc
 
 def check_rose():
     """
@@ -53,10 +52,10 @@ def check_rose():
     try:
         if not rose_is_found():
             raise AuthError
-    except AuthError:
+    except AuthError as exc:
         warning(ROSE_UNABLE_MESSAGE)
         todo('Please ensure that the correct modules are loaded.')
-        raise
+        raise AuthError from exc
 
 METOMI_BASENAME = '.metomi'
 METOMI_DIR = path.join(environ['HOME'], METOMI_BASENAME)
@@ -79,23 +78,21 @@ def get_rose_username():
     """
     unable_message = 'Unable to retrieve MOSRS username from Rose config.'
     try:
-        rose_config = Popen(
+        with Popen(
             ['rose', 'config', ROSIE_ID_SECTION, PREFIX_USERNAME_KEY],
             stdout=PIPE,
-            stderr=PIPE)
-        stdout, stderr = rose_config.communicate()
+            stderr=PIPE) as rose_config:
+            stdout, stderr = communicate(rose_config)
+            if rose_config.returncode != 0:
+                debug(unable_message)
+                debug(stderr)
+                return None
+            return stdout.strip()
     except OSError as exc:
         warning(unable_message)
         for arg in exc.args:
             debug(arg)
-        raise AuthError
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
-    if rose_config.returncode != 0:
-        debug(unable_message)
-        debug(stderr)
-        return None
-    return stdout.strip()
+        raise AuthError from exc
 
 def save_rose_username(username):
     """
@@ -111,39 +108,37 @@ def save_rose_username(username):
     unable_message = 'Unable to save MOSRS username to Rose config.'
     # Append the config string to the Rose configuration
     try:
-        with open(METOMI_ROSE_CONF, 'a') as rose_conf_file:
+        with open(METOMI_ROSE_CONF, 'a', encoding=ENCODING) as rose_conf_file:
             rose_conf_file.write(config_str)
     except IOError as exc:
         warning(unable_message)
         for arg in exc.args:
             debug(arg)
-        raise AuthError
+        raise AuthError from exc
     try:
-        rose_config = Popen(
+        with Popen(
             ['rose', 'config', '--print-ignored', '--file', METOMI_ROSE_CONF],
             stdout=PIPE,
-            stderr=PIPE)
-        stdout, stderr = rose_config.communicate()
+            stderr=PIPE) as rose_config:
+            stdout, stderr = communicate(rose_config)
+            if rose_config.returncode != 0:
+                warning(unable_message)
+                debug(stderr)
+                raise AuthError
     except OSError as exc:
         warning(unable_message)
         for arg in exc.args:
             debug(arg)
-        raise AuthError
-    stdout = '' if stdout is None else stdout
-    stderr = '' if stderr is None else stderr
-    if rose_config.returncode != 0:
-        warning(unable_message)
-        debug(stderr)
-        raise AuthError
+        raise AuthError from exc
     # Write stdout to the Rose configuration
     try:
-        with open(METOMI_ROSE_CONF, 'w') as rose_conf_file:
+        with open(METOMI_ROSE_CONF, 'w', encoding=ENCODING) as rose_conf_file:
             rose_conf_file.write(stdout)
     except IOError as exc:
         warning(unable_message)
         for arg in exc.args:
             debug(arg)
-        raise AuthError
+        raise AuthError from exc
 
 ROSE_KEY = 'rosie:https:code.metoffice.gov.uk'
 
@@ -176,19 +171,19 @@ def check_rose_credentials(username, prefix='u'):
     Try rosie hello with prefix to make sure that the cached password is working
     """
     info('Checking your credentials using rosie. Please wait.')
-    process = Popen(
+    with Popen(
         ['rosie', 'hello', '--prefix={}'.format(prefix)],
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, stderr = process.communicate()
-    unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
-    if process.returncode != 0:
-        raise AuthError(unable_message, stderr)
-    stdout = '' if stdout is None else stdout
-    if 'Hello ' + username in stdout:
-        info('Successfully accessed rosie with your credentials.')
-    else:
-        raise AuthError(unable_message, stdout)
+        stderr=PIPE) as process:
+        stdout, stderr = communicate(process)
+        unable_message = 'Unable to access rosie prefix {} with your credentials:'.format(prefix)
+        if process.returncode != 0:
+            raise AuthError(unable_message, stderr)
+        stdout = '' if stdout is None else stdout
+        if 'Hello ' + username in stdout:
+            info('Successfully accessed rosie with your credentials.')
+        else:
+            raise AuthError(unable_message, stdout)
 
 def todo_check_rose_username():
     """

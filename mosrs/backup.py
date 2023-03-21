@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
@@ -22,6 +22,7 @@ from os import environ, getpid, makedirs, path
 from shutil import rmtree
 from subprocess import Popen, PIPE
 
+from mosrs.encoding import communicate
 from mosrs.exception import BackupError
 from mosrs.message import debug, warning
 
@@ -72,14 +73,14 @@ def backup(path_name):
     if not path.exists(full_backup_path):
         # Backup the file or directory
         debug('Backing up {}.'.format(path_name))
-        process = Popen(
+        with Popen(
             ['rsync', '-a', '--no-o', '--no-g', full_path, backup_path],
             stdout=PIPE,
-            stderr=PIPE)
-        _stdout, stderr = process.communicate()
-        if process.returncode != 0:
-            # Backup failed. Try to clean up
-            rmtree(full_backup_path, ignore_errors=True)
-            warning('Backup via rsync failed: {}'.format(stderr))
-            return False
+            stderr=PIPE) as process:
+            _ignore, stderr = communicate(process)
+            if process.returncode != 0:
+                # Backup failed. Try to clean up
+                rmtree(full_backup_path, ignore_errors=True)
+                warning('Backup via rsync failed: {}'.format(stderr))
+                return False
     return True

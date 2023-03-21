@@ -17,12 +17,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from binascii import hexlify
 from os import environ, mkdir, path
 from subprocess import Popen, PIPE
-from urllib import unquote
+from urllib.parse import unquote
 
 from mosrs.backup import backup
+from mosrs.encoding import communicate, ENCODING
 from mosrs.exception import GPGError
 from mosrs.message import debug
 
@@ -35,13 +35,13 @@ def get_passphrase(cache_id):
     stdout = send('GET_PASSPHRASE --no-ask --data {} X X X\n'.format(cache_id))
     try:
         result = unquote(stdout[0][2:])
-    except IndexError:
+    except IndexError as exc:
         index_error_str = 'get_passphrase: IndexError'
         if stdout:
             debug(index_error_str + ': len(stdout[0]) == {}'.format(len(stdout[0])))
         else:
             debug(index_error_str + ': stdout is empty.')
-        raise GPGError(index_error_str)
+        raise GPGError(index_error_str) from exc
     return result
 
 def clear_passphrase(cache_id):
@@ -60,26 +60,29 @@ def preset_passphrase(keygrip, passphrase):
     """
     # Only -1 is allowed for timeout
     timeout = -1
-    assert passphrase is not None
-    send('PRESET_PASSPHRASE {} {} {}\n'.format(keygrip, timeout, hexlify(passphrase)))
+    hex_passphrase = passphrase.encode().hex()
+    send('PRESET_PASSPHRASE {} {} {}\n'.format(
+        keygrip,
+        timeout,
+        hex_passphrase))
 
 def send(message):
     """
     Connect to the agent and send a message
     """
-    agent = Popen(
+    with Popen(
         ['gpg-connect-agent'],
         bufsize=0,
         stdin=PIPE,
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, stderr = agent.communicate(message)
-    if agent.returncode != 0:
-        raise GPGError(
-            'gpg.send:',
-            'Could not connect to gpg-agent:\n{}'.format(stderr))
-    check_return(stdout)
-    return stdout.split('\n')[0:-2]
+        stderr=PIPE) as agent:
+        stdout, stderr = communicate(agent, message)
+        if agent.returncode != 0:
+            raise GPGError(
+                'gpg.send:',
+                'Could not connect to gpg-agent:\n{}'.format(stderr))
+        check_return(stdout)
+        return stdout.split('\n')[0:-2]
 
 def check_return(stdout):
     """
@@ -93,22 +96,22 @@ def set_environ():
     """
     Setup the assumed environment variables GPG_TTY and GPG_AGENT_INFO
     """
-    process = Popen(
+    with Popen(
         ['tty'],
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, _stderr = process.communicate()
-    if process.returncode == 0:
-        stdout_line = stdout.splitlines()[0]
-        environ['GPG_TTY'] = stdout_line
-    process = Popen(
+        stderr=PIPE) as process:
+        stdout, _ignore = communicate(process)
+        if process.returncode == 0:
+            stdout_line = stdout.splitlines()[0]
+            environ['GPG_TTY'] = stdout_line
+    with Popen(
         ['gpgconf', '--list-dirs', 'agent-socket'],
         stdout=PIPE,
-        stderr=PIPE)
-    stdout, _stderr = process.communicate()
-    if process.returncode == 0:
-        stdout_line = stdout.splitlines()[0]
-        environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
+        stderr=PIPE) as process:
+        stdout, _ignore = communicate(process)
+        if process.returncode == 0:
+            stdout_line = stdout.splitlines()[0]
+            environ['GPG_AGENT_INFO'] = stdout_line + ':0:1'
 
 GNUPG_BASENAME = '.gnupg'
 GNUPG_DIR = path.join(environ['HOME'], GNUPG_BASENAME)
@@ -143,7 +146,7 @@ def check_gpg_agent_conf():
     if not path.exists(gpg_agent_conf_path):
         # Backup the ~/.gnupg directory
         backup_gnupg()
-        with open(gpg_agent_conf_path, 'w') as gpg_agent_conf_file:
+        with open(gpg_agent_conf_path, 'w', encoding=ENCODING) as gpg_agent_conf_file:
             gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
             gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
         conf_updated = True
@@ -151,29 +154,29 @@ def check_gpg_agent_conf():
     else:
         # Check if gpg_agent.conf contains the line 'allow-preset-passphrase'
         debug('Checking {}'.format(gpg_agent_conf_path))
-        grep_command = Popen(
+        with Popen(
             ['grep', gpg_agent_conf_allow_preset_passphrase, gpg_agent_conf_path],
-            stdout=PIPE)
-        grep_command.communicate()
-        if grep_command.returncode != 0:
-            # Backup the ~/.gnupg directory
-            backup_gnupg()
-            with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
-                gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
-            conf_updated = True
-            debug('Updated {}'.format(gpg_agent_conf_path))
+            stdout=PIPE) as grep_command:
+            grep_command.communicate()
+            if grep_command.returncode != 0:
+                # Backup the ~/.gnupg directory
+                backup_gnupg()
+                with open(gpg_agent_conf_path, 'a', encoding=ENCODING) as gpg_agent_conf_file:
+                    gpg_agent_conf_file.write(gpg_agent_conf_allow_preset_passphrase + '\n')
+                conf_updated = True
+                debug('Updated {}'.format(gpg_agent_conf_path))
         # Check if gpg_agent.conf contains the line 'max-cache-ttl 43200'
-        grep_command = Popen(
+        with Popen(
             ['grep', gpg_agent_conf_max_cache_ttl, gpg_agent_conf_path],
-            stdout=PIPE)
-        grep_command.communicate()
-        if grep_command.returncode != 0:
-            # Backup the ~/.gnupg directory
-            backup_gnupg()
-            with open(gpg_agent_conf_path, 'a') as gpg_agent_conf_file:
-                gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
-            conf_updated = True
-            debug('Updated {}'.format(gpg_agent_conf_path))
+            stdout=PIPE) as grep_command:
+            grep_command.communicate()
+            if grep_command.returncode != 0:
+                # Backup the ~/.gnupg directory
+                backup_gnupg()
+                with open(gpg_agent_conf_path, 'a', encoding=ENCODING) as gpg_agent_conf_file:
+                    gpg_agent_conf_file.write(gpg_agent_conf_max_cache_ttl + '\n')
+                conf_updated = True
+                debug('Updated {}'.format(gpg_agent_conf_path))
     return conf_updated
 
 def start_gpg_agent():
