@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosrs',
-    version='0.9.12',
+    version='1.0.0',
     description='Cache credentials for NCI users of MOSRS',
     license='Apache License, Version 2.0',
     packages=find_packages(),
@@ -30,15 +30,14 @@ setup(
         'Environment :: Console',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
         'Topic :: System :: Systems Administration :: Authentication/Directory',
     ],
     author='Scott Wales',
     maintainer='National Computational Infrastructure',
     install_requires=[
-        'python-ldap <= 3.3.1',
-        'certifi <= 2021.10.8',
-        'requests < 2.28',
+        'certifi',
+        'requests',
         ],
     entry_points={
         'console_scripts': [
