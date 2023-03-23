@@ -181,12 +181,14 @@ def main():
     if on_accessdev():
         warning('This version of mosrs-auth is not intended to run on accessdev.')
         return
-
+    program_name = 'mosrs-auth'
     package_version = version.version()
-    package_version_message = f'mosrs-auth version {package_version}'
-    package_description = (
-        f'{package_version_message}: cache password to MOSRS for Rose and Subversion')
-    parser = argparse.ArgumentParser(description=package_description)
+    program_version_message = f'{program_name} version {package_version}'
+    program_description = (
+        f'{program_version_message}: cache password to MOSRS for Rose and Subversion')
+    parser = argparse.ArgumentParser(
+        prog=program_name,
+        description=program_description)
     parser.add_argument(
         '--debug',
         dest='debugging',
@@ -206,9 +208,9 @@ def main():
 
     if args.debugging:
         message.debugging = True
-        debug(package_version_message)
+        debug(program_version_message)
     if args.version:
-        print(package_version_message)
+        print(program_version_message)
         return
 
     contact_helpdesk = 'Please contact the helpdesk.'
