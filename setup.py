@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosrs',
-    version='0.9.12',
+    version='0.9.13',
     description='Cache credentials for NCI users of MOSRS',
     license='Apache License, Version 2.0',
     packages=find_packages(),
@@ -36,7 +36,6 @@ setup(
     author='Scott Wales',
     maintainer='National Computational Infrastructure',
     install_requires=[
-        'python-ldap <= 3.3.1',
         'certifi <= 2021.10.8',
         'requests < 2.28',
         ],
