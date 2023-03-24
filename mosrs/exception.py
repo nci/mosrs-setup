@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
