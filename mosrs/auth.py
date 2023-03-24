@@ -63,6 +63,8 @@ def request_and_save_credentials(rose_username=None, svn_username=None):
         raise AuthError
     # Save credentials
     svn.save_svn_username(username, plaintext)
+    if rose_username is None:
+        rose.save_rose_username(username)
     try:
         rose.save_rose_password(passwd)
         svn.save_svn_password(passwd)
@@ -73,7 +75,7 @@ def request_and_save_credentials(rose_username=None, svn_username=None):
         raise AuthError
     return username
 
-def update(rose_username, svn_username=None):
+def update(rose_username=None, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
@@ -237,7 +239,7 @@ def main():
     # Check or update the user's credentials
     try:
         if args.force:
-            update(rose.get_rose_username())
+            update()
         else:
             check_or_update()
     except AuthError:
