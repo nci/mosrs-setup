@@ -20,28 +20,23 @@ class AuthError(Exception):
     """
     Indicates an anticipated error
     """
-    pass
 
 class BackupError(Exception):
     """
     Indicates an anticipated error
     """
-    pass
 
 class GPGError(Exception):
     """
     Indicates an anticipated error
     """
-    pass
 
 class MessageError(Exception):
     """
     Indicates an anticipated error
     """
-    pass
 
 class SetupError(Exception):
     """
     Indicates user needs to take action before setup can complete
     """
-    pass

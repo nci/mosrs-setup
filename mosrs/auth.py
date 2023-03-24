@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 Copyright 2015 ARC Centre of Excellence for Climate Systems Science
 
@@ -17,7 +17,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import print_function
 import argparse
 from getpass import getpass
 from textwrap import dedent
@@ -34,8 +33,8 @@ def request_credentials(username=None):
     """
     info('You need to enter your MOSRS credentials here so that GPG can cache your password.')
     if username is None:
-        username = raw_input('Please enter your MOSRS username: ')
-    passwd = getpass('Please enter the MOSRS password for {}: '.format(username))
+        username = input('Please enter your MOSRS username: ')
+    passwd = getpass(f'Please enter the MOSRS password for {username}: ')
     return username, passwd
 
 PLAINTEXT_PASSWORD_MESSAGE = (
@@ -72,15 +71,15 @@ def request_and_save_credentials(rose_username=None, svn_username=None):
         warning('Saving credentials failed.')
         for arg in exc.args:
             debug(arg)
-        raise AuthError
+        raise AuthError from exc
     return username
 
 def update(rose_username=None, svn_username=None):
     """
     Ask for credentials from the user & save in the GPG agent
     """
-    debug('MOSRS Rose username passed to update is "{}".'.format(rose_username))
-    debug('MOSRS Subversion username passed to update is "{}".'.format(svn_username))
+    debug(f'MOSRS Rose username passed to update is "{rose_username}".')
+    debug(f'MOSRS Subversion username passed to update is "{svn_username}".')
     if svn_username is None:
         svn_username = rose_username
     try:
@@ -116,12 +115,12 @@ def check_or_update():
     """
     rose_username = rose.get_rose_username()
     if rose_username is not None:
-        debug('MOSRS username stored in Rose config is "{}".'.format(rose_username))
+        debug(f'MOSRS username stored in Rose config is "{rose_username}".')
     svn_username = svn.get_svn_username()
     if svn_username is None:
         update(rose_username)
         return
-    debug('MOSRS username stored in Subversion servers file is "{}".'.format(svn_username))
+    debug(f'MOSRS username stored in Subversion servers file is "{svn_username}".')
 
     # Check if the Subversion servers file allows plaintext passwords to be stored
     plaintext = svn.svn_servers_stores_plaintext_passwords()
@@ -175,7 +174,7 @@ def start_gpg_agent():
         warning('GPGError in start_gpg_agent:')
         for arg in exc.args:
             info(arg)
-        raise AuthError
+        raise AuthError from exc
 
 def main():
     """
@@ -184,13 +183,14 @@ def main():
     if on_accessdev():
         warning('This version of mosrs-auth is not intended to run on accessdev.')
         return
-
+    program_name = 'mosrs-auth'
     package_version = version.version()
-    package_version_message = 'mosrs-auth version {}'.format(package_version)
-    package_description = (
-        '{}: cache password to MOSRS for Rose and Subversion'.format(
-            package_version_message))
-    parser = argparse.ArgumentParser(description=package_description)
+    program_version_message = f'{program_name} version {package_version}'
+    program_description = (
+        f'{program_version_message}: cache password to MOSRS for Rose and Subversion')
+    parser = argparse.ArgumentParser(
+        prog=program_name,
+        description=program_description)
     parser.add_argument(
         '--debug',
         dest='debugging',
@@ -210,9 +210,9 @@ def main():
 
     if args.debugging:
         message.debugging = True
-        debug(package_version_message)
+        debug(program_version_message)
     if args.version:
-        print(package_version_message)
+        print(program_version_message)
         return
 
     contact_helpdesk = 'Please contact the helpdesk.'

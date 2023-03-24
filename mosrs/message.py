@@ -16,8 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import print_function
-
 from mosrs.exception import MessageError
 
 debugging = False # pylint: disable=C0103
@@ -44,22 +42,22 @@ def debug(text):
     Print a debug message
     """
     if debugging:
-        print('{}: {}'.format(colour('DBUG', 'magenta'), text))
+        print(f'{colour("DBUG", "magenta")}: {text}')
 
 def info(text):
     """
     Print an information message
     """
-    print('{}: {}'.format(colour('INFO', 'blue'), text))
+    print(f'{colour("INFO", "blue")}: {text}')
 
 def todo(text):
     """
     Print a todo message
     """
-    print('{}: {}'.format(colour('TODO', 'green'), text))
+    print(f'{colour("TODO", "green")}: {text}')
 
 def warning(text):
     """
     Print a warning message
     """
-    print('{}: {}'.format(colour('WARN', 'red'), text))
+    print(f'{colour("WARN", "red")}: {text}')
