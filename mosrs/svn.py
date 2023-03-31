@@ -20,7 +20,7 @@ from configparser import SafeConfigParser
 from configparser import Error as ConfigParserError
 from hashlib import md5
 from os import environ, mkdir, path, remove
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 from mosrs.backup import backup
 from mosrs.encoding import communicate, ENCODING
@@ -122,6 +122,7 @@ def save_svn_username(username, plaintext=False):
 SVN_AUTH_DIR = path.join(SVN_DIR, 'auth', 'svn.simple')
 SVN_PREKEY = '<https://code.metoffice.gov.uk:443> Met Office Code'
 SVN_URL = 'https://code.metoffice.gov.uk/svn/test'
+SVN_MOSRS_TIMEOUT = 20
 
 def get_svn_key():
     """
@@ -256,12 +257,21 @@ def check_svn_credentials(url=SVN_URL):
         ['svn', 'info', '--non-interactive', url],
         stdout=PIPE,
         stderr=PIPE) as process:
-        stdout, stderr = communicate(process)
+        try:
+            stdout, stderr = communicate(process, timeout=SVN_MOSRS_TIMEOUT)
+        except TimeoutExpired as exc:
+            process.kill()
+            timeout_message = (
+                f'Access to {url} via Subversion timed out after {SVN_MOSRS_TIMEOUT} seconds.')
+            debug(timeout_message)
+            raise AuthError(timeout_message) from exc
         unable_message = f'Unable to access {url} via Subversion with your credentials:'
         if process.returncode != 0:
+            debug(unable_message)
             raise AuthError(unable_message, stderr)
         stdout = '' if stdout is None else stdout
         if 'Path:' in stdout:
             info('Successfully accessed Subversion with your credentials.')
         else:
+            debug(unable_message)
             raise AuthError(unable_message, stdout)

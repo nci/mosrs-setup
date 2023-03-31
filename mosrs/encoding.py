@@ -26,12 +26,13 @@ def decode(bytes_obj):
         '' if bytes_obj is None else
         bytes_obj.decode(ENCODING))
 
-def communicate(process, message=None):
+def communicate(process, message=None, timeout=None):
     """
     Decode the results of process.communicate using ENCODING
     """
     message_bytes = None if message is None else message.encode()
-    stdout_bytes, stderr_bytes = process.communicate(message_bytes)
+    stdout_bytes, stderr_bytes = process.communicate(
+        input=message_bytes, timeout=timeout)
     stdout = decode(stdout_bytes)
     stderr = decode(stderr_bytes)
     return stdout, stderr
