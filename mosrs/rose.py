@@ -17,7 +17,7 @@ limitations under the License.
 """
 
 from os import environ, mkdir, path
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 from mosrs.backup import backup
 from mosrs.encoding import communicate, ENCODING
@@ -162,6 +162,8 @@ def rose_password_is_cached():
         return False
     return True
 
+ROSIE_HELLO_TIMEOUT = 20
+
 def check_rose_credentials(username, prefix='u'):
     """
     Try rosie hello with prefix to make sure that the cached password is working
@@ -171,7 +173,13 @@ def check_rose_credentials(username, prefix='u'):
         ['rosie', 'hello', f'--prefix={prefix}'],
         stdout=PIPE,
         stderr=PIPE) as process:
-        stdout, stderr = communicate(process)
+        try:
+            stdout, stderr = communicate(process, timeout=ROSIE_HELLO_TIMEOUT)
+        except TimeoutExpired as exc:
+            process.kill()
+            timeout_message = (
+                f'Access to rosie prefix {prefix} timed out after {ROSIE_HELLO_TIMEOUT} seconds.')
+            raise AuthError(timeout_message) from exc
         unable_message = f'Unable to access rosie prefix {prefix} with your credentials:'
         if process.returncode != 0:
             raise AuthError(unable_message, stderr)

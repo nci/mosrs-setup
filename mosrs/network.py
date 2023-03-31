@@ -16,11 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 from mosrs.message import debug
 
 MOSRS_URL = 'https://code.metoffice.gov.uk'
+MOSRS_TIMEOUT = 20
 
 def is_connected():
     """
@@ -30,7 +31,13 @@ def is_connected():
         ['wget', '-q', '-O', '/dev/null', MOSRS_URL],
         stdout=PIPE,
         stderr=PIPE) as process:
-        process.communicate()
-        if process.returncode != 0:
-            debug(f'wget {MOSRS_URL} returned {process.returncode}')
-        return process.returncode == 0
+        try:
+            process.communicate(timeout=MOSRS_TIMEOUT)
+        except TimeoutExpired:
+            process.kill()
+            debug(f'wget {MOSRS_URL} timed out after {MOSRS_TIMEOUT} seconds.')
+            return False
+        connected = process.returncode == 0
+        if not connected:
+            debug(f'wget {MOSRS_URL} returned {process.returncode}.')
+        return connected
