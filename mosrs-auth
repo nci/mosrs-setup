@@ -191,6 +191,9 @@ Add to ~/.subversion/servers (use the existing [groups] if it already exists):
         print("Authentication confirmed")
     except Exception as e:
         print("ERROR checking password")
+        # Clear the bad passphrase
+        clear_passphrase(rosie_key)
+        clear_passphrase(svn_key)
         print(e)        
 
 if __name__ == '__main__':
