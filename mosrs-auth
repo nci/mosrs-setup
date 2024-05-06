@@ -98,6 +98,8 @@ def check_password(user, password):
     if r.status != 200:
         raise Exception(r.status)
 
+    # Create the svn auth file
+    os.makedirs(os.path.expanduser('~/.subversion/auth/svn.simple'), exist_ok=True)
     with open(os.path.expanduser(f'~/.subversion/auth/svn.simple/{svn_key}'), 'w') as f:
         f.write(textwrap.dedent(f"""\
         K 8
